@@ -46,6 +46,34 @@ export function PacksClient() {
     load();
   }
 
+  async function rename(id: string, currentName: string) {
+    const name = window.prompt("New name for this server pack:", currentName);
+    if (!name || name === currentName) return;
+    setBusyId(id);
+    const res = await fetch(`/api/packs/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Rename failed");
+    }
+    setBusyId(null);
+    load();
+  }
+
+  async function duplicate(id: string) {
+    setBusyId(id);
+    const res = await fetch(`/api/packs/${id}/duplicate`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Duplicate failed");
+    }
+    setBusyId(null);
+    load();
+  }
+
   return (
     <div className="space-y-4 px-6 py-10">
       <h2 className="text-base font-semibold">My Server Packs</h2>
@@ -66,6 +94,7 @@ export function PacksClient() {
               {pack.status === "FAILED" && pack.errorMessage && (
                 <p className="mt-1 text-xs text-red-400">{pack.errorMessage}</p>
               )}
+              {pack.status === "DRAFT" && <p className="mt-1 text-xs text-slate-500">Draft — not generated yet</p>}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <span
@@ -89,6 +118,12 @@ export function PacksClient() {
                   {busyId === pack.id ? "Working..." : "Generate"}
                 </Button>
               )}
+              <Button variant="secondary" onClick={() => rename(pack.id, pack.name)} disabled={busyId === pack.id}>
+                Rename
+              </Button>
+              <Button variant="secondary" onClick={() => duplicate(pack.id)} disabled={busyId === pack.id}>
+                Duplicate
+              </Button>
               <Button variant="secondary" onClick={() => remove(pack.id)}>
                 Delete
               </Button>

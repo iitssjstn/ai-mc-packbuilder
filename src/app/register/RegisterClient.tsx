@@ -13,13 +13,27 @@ export function RegisterClient({ redirectTo }: { redirectTo: string }) {
     e.preventDefault();
     setError(null);
     const form = new FormData(e.currentTarget);
+    const password = form.get("password") as string;
+    const confirmPassword = form.get("confirmPassword") as string;
+    const termsAccepted = form.get("termsAccepted") === "on";
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("You must accept the Terms to sign up");
+      return;
+    }
+
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         email: form.get("email"),
         username: form.get("username"),
-        password: form.get("password"),
+        password,
+        termsAccepted,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -41,6 +55,16 @@ export function RegisterClient({ redirectTo }: { redirectTo: string }) {
           <Input type="email" name="email" placeholder="Email" required />
           <Input type="text" name="username" placeholder="Username" required />
           <Input type="password" name="password" placeholder="Password (min. 10 characters)" required />
+          <Input type="password" name="confirmPassword" placeholder="Confirm password" required />
+          <label className="flex items-start gap-2 pt-1 text-sm text-slate-400">
+            <input type="checkbox" name="termsAccepted" className="mt-0.5" required />
+            <span>
+              I agree to the{" "}
+              <Link href="/terms" className="text-emerald-400 hover:underline">
+                Terms of Service
+              </Link>
+            </span>
+          </label>
           <Button type="submit">Sign Up</Button>
         </form>
         <p className="mt-4 text-sm text-slate-400">

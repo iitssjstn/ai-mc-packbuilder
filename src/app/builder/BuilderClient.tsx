@@ -90,6 +90,29 @@ export function BuilderClient() {
     }
   }
 
+  async function saveDraft() {
+    if (!plan || busy) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/api/packs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(plan),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus(`Could not save draft: ${data.error}`);
+        return;
+      }
+      setStatus("Saved as a draft — find it under 'My Server Packs' whenever you're ready to generate it.");
+    } catch {
+      setStatus("Unexpected error while saving the draft.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6 px-6 py-10">
       <Panel className="min-h-[240px] flex flex-col gap-3">
@@ -140,6 +163,9 @@ export function BuilderClient() {
           <div className="mt-4 flex items-center gap-3">
             <Button onClick={generatePack} disabled={busy}>
               Create Server Pack
+            </Button>
+            <Button variant="secondary" onClick={saveDraft} disabled={busy}>
+              Save as Draft
             </Button>
             {status && <span className="text-sm text-slate-400">{status}</span>}
           </div>

@@ -16,12 +16,18 @@ const registerSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3).max(32).regex(/^[a-zA-Z0-9_]+$/),
   password: z.string().min(10).max(128),
+  termsAccepted: z.literal(true, { errorMap: () => ({ message: "You must accept the Terms to sign up" }) }),
 });
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   if (!rateLimit(`register:${ip}`, 10, 15 * 60 * 1000).allowed) {
     return NextResponse.json({ error: "Too many attempts, try again later" }, { status: 429 });
+  }
+
+  const registrationSetting = await prisma.systemSetting.findUnique({ where: { key: "registrationEnabled" } });
+  if (registrationSetting?.value === "false") {
+    return NextResponse.json({ error: "Registration is currently disabled" }, { status: 403 });
   }
 
   const parsed = registerSchema.safeParse(await req.json().catch(() => null));
@@ -32,6 +38,7 @@ export async function POST(req: NextRequest) {
   if (existing) return NextResponse.json({ error: "Email or username already in use" }, { status: 409 });
 
   const user = await authenticationService.register(email, username, password);
+  await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
   const token = authenticationService.issueToken(user.id, user.role as Role);
   setSessionCookie(token);
 

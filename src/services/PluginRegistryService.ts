@@ -46,11 +46,37 @@ export class PluginRegistryService {
     slug: string;
     name: string;
     description: string;
+    author?: string;
     officialUrl?: string;
+    documentationUrl?: string;
+    repositoryUrl?: string;
+    category?: string;
+    tags?: string;
     license?: string;
     configSchema?: unknown;
   }) {
     return prisma.plugin.create({ data: data as any });
+  }
+
+  /** Admin edit of an existing plugin's metadata — separate from the
+   * isActive toggle (its own route) since that's a much more frequent,
+   * lower-stakes action. */
+  async update(
+    id: string,
+    data: Partial<{
+      name: string;
+      description: string;
+      author: string;
+      officialUrl: string;
+      documentationUrl: string;
+      repositoryUrl: string;
+      category: string;
+      tags: string;
+      license: string;
+      lastVerifiedAt: Date;
+    }>
+  ) {
+    return prisma.plugin.update({ where: { id }, data: data as any });
   }
 
   async setActive(slug: string, isActive: boolean) {

@@ -21,3 +21,38 @@ export type MessageRole = (typeof MESSAGE_ROLES)[number];
 
 export const PACK_STATUSES = ["DRAFT", "PLANNED", "GENERATING", "READY", "FAILED"] as const;
 export type PackStatus = (typeof PACK_STATUSES)[number];
+
+export const PLUGIN_CATEGORIES = [
+  "Administration",
+  "Economy",
+  "Permissions",
+  "Protection",
+  "Claims",
+  "Anti-Cheat",
+  "Moderation",
+  "Chat",
+  "Gameplay",
+  "Quests",
+  "World Management",
+  "World Generation",
+  "Teleportation",
+  "Cosmetics",
+  "Ranks",
+  "Shops",
+  "Crates",
+  "Jobs",
+  "Skills",
+  "Minigames",
+  "Discord",
+  "Logging",
+  "Performance",
+  "Security",
+  "Utility",
+] as const;
+export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
+
+export const NOTIFICATION_TYPES = ["pack_ready", "pack_failed", "password_changed"] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export const HEALTH_STATUSES = ["healthy", "warning", "error"] as const;
+export type HealthStatus = (typeof HEALTH_STATUSES)[number];

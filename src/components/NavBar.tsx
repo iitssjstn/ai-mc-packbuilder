@@ -2,14 +2,22 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Home, Sparkles, FolderOpen, User, Users, Box, ArrowRight, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Home, Sparkles, FolderOpen, User, Users, Box, ArrowRight, LogOut, Bell } from "lucide-react";
 
 interface Me {
   id: string;
   email: string;
   username: string;
   role: "USER" | "ADMIN" | "OWNER";
+}
+
+interface Notification {
+  id: string;
+  type: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
 }
 
 const BASE_LINKS = [
@@ -22,6 +30,9 @@ export function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
   const isHomepage = pathname === "/";
 
   useEffect(() => {
@@ -31,8 +42,29 @@ export function NavBar() {
       .catch(() => setMe(null));
   }, [pathname]);
 
+  useEffect(() => {
+    if (!me) {
+      setNotifications([]);
+      return;
+    }
+    fetch("/api/notifications")
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setNotifications)
+      .catch(() => setNotifications([]));
+  }, [me, pathname]);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   // "Account" only makes sense once logged in (there's no profile page —
-  // it's really a logout action). Logged out, the equivalent is "Inloggen".
+  // it's really a logout action). Logged out, the equivalent is "Log In".
   const links = [
     ...BASE_LINKS,
     ...(me ? [] : [{ href: "/login", label: "Log In", icon: User }]),
@@ -44,6 +76,11 @@ export function NavBar() {
     setMe(null);
     router.push("/");
     router.refresh();
+  }
+
+  async function markAllRead() {
+    await fetch("/api/notifications/read-all", { method: "POST" });
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 
   return (
@@ -87,13 +124,59 @@ export function NavBar() {
               );
             })}
             {me && (
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 border border-transparent px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
-              >
-                <LogOut size={15} />
-                Log Out
-              </button>
+              <>
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={() => setNotifOpen((o) => !o)}
+                    className="relative flex items-center px-3 py-1.5 text-slate-400 transition-colors hover:text-slate-200"
+                    aria-label="Notifications"
+                  >
+                    <Bell size={16} />
+                    {unreadCount > 0 && (
+                      <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-medium text-base-950">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {notifOpen && (
+                    <div className="absolute right-0 z-20 mt-2 w-80 rounded-md border border-base-700 bg-base-900 shadow-lg">
+                      <div className="flex items-center justify-between border-b border-base-700 px-3 py-2">
+                        <span className="text-xs font-medium text-slate-300">Notifications</span>
+                        {unreadCount > 0 && (
+                          <button onClick={markAllRead} className="text-xs text-emerald-400 hover:underline">
+                            Mark all as read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-72 overflow-y-auto">
+                        {notifications.length === 0 && (
+                          <p className="px-3 py-4 text-center text-xs text-slate-500">No notifications.</p>
+                        )}
+                        {notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`border-b border-base-800 px-3 py-2 text-xs last:border-b-0 ${
+                              n.read ? "text-slate-500" : "text-slate-200"
+                            }`}
+                          >
+                            <p>{n.message}</p>
+                            <p className="mt-0.5 text-[10px] text-slate-500">
+                              {new Date(n.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 border border-transparent px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
+                >
+                  <LogOut size={15} />
+                  Log Out
+                </button>
+              </>
             )}
           </nav>
         )}

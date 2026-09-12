@@ -14,6 +14,18 @@ export async function GET() {
   const roleError = requireRole(session, "OWNER");
   if (roleError) return roleError;
 
-  const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
-  return NextResponse.json(logs);
+  const logs = await prisma.auditLog.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    include: { user: { select: { username: true, email: true } } },
+  });
+  return NextResponse.json(
+    logs.map((l: (typeof logs)[number]) => ({
+      id: l.id,
+      action: l.action,
+      details: l.details,
+      createdAt: l.createdAt,
+      actor: l.user ? l.user.username : null,
+    }))
+  );
 }

@@ -20,19 +20,21 @@ datasource db {
 // ---------- Users & roles ----------
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  username      String   @unique
-  passwordHash  String
-  role          String   @default("USER") // Role: USER | ADMIN | OWNER
-  isBlocked     Boolean  @default(false)
-  packLimit     Int      @default(20)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(uuid())
+  email          String    @unique
+  username       String    @unique
+  passwordHash   String
+  role           String    @default("USER") // Role: USER | ADMIN | OWNER
+  isBlocked      Boolean   @default(false)
+  packLimit      Int       @default(20)
+  termsAcceptedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   conversations AiConversation[]
   packs         ServerPack[]
   auditLogs     AuditLog[]
+  notifications Notification[]
 }
 
 // ---------- Minecraft versions & server software ----------
@@ -77,14 +79,20 @@ model ServerSoftwareCompat {
 // ---------- Plugin registry ----------
 
 model Plugin {
-  id            String   @id @default(uuid())
-  slug          String   @unique // e.g. "essentialsx"
-  name          String
-  description   String
-  officialUrl   String?
-  license       String?
-  isActive      Boolean  @default(true)
-  configSchema  String?  // JSON-encoded JSON Schema describing configurable options
+  id               String    @id @default(uuid())
+  slug             String    @unique // e.g. "essentialsx"
+  name             String
+  description      String
+  author           String?
+  officialUrl      String?
+  documentationUrl String?
+  repositoryUrl    String?
+  category         String? // e.g. Economy, Permissions, Protection — see src/lib/enums.ts PLUGIN_CATEGORIES
+  tags             String? // comma-separated, free-form
+  license          String?
+  isActive         Boolean   @default(true)
+  lastVerifiedAt   DateTime?
+  configSchema     String?   // JSON-encoded JSON Schema describing configurable options
 
   versions      PluginVersion[]
   dependsOn     PluginDependency[] @relation("PluginDependsOn")
@@ -326,4 +334,15 @@ model AuditLog {
 model SystemSetting {
   key   String @id
   value String
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String // e.g. "pack_ready" | "pack_failed" | "password_changed"
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

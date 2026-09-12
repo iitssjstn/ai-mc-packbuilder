@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Panel, Button, Input } from "@/components/ui";
+import { PLUGIN_CATEGORIES } from "@/lib/enums";
 
 interface User {
   id: string;
@@ -20,12 +21,20 @@ interface Plugin {
   id: string;
   name: string;
   slug: string;
+  author: string | null;
+  category: string | null;
+  tags: string | null;
+  officialUrl: string | null;
+  documentationUrl: string | null;
+  lastVerifiedAt: string | null;
   isActive: boolean;
   versions: PluginVersion[];
 }
 interface AuditEntry {
   id: string;
   action: string;
+  actor: string | null;
+  details: string | null;
   createdAt: string;
 }
 interface ProviderInfo {
@@ -36,6 +45,17 @@ interface ProviderInfo {
 interface AiSettings {
   order: string[];
   providers: Record<string, ProviderInfo>;
+}
+interface HealthCheck {
+  name: string;
+  status: "healthy" | "warning" | "error";
+  detail: string;
+}
+interface SiteSettings {
+  siteName: string;
+  registrationEnabled: "true" | "false";
+  defaultMinecraftVersion: string;
+  maintenanceMode: "true" | "false";
 }
 
 const SOFTWARE_OPTIONS = ["PAPER", "PURPUR", "VANILLA"] as const;
@@ -50,12 +70,17 @@ export function AdminClient() {
   const [aiSettings, setAiSettings] = useState<AiSettings | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [orderInput, setOrderInput] = useState("");
+  const [health, setHealth] = useState<HealthCheck[] | null>(null);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
   async function load() {
-    const [usersRes, pluginsRes, auditRes] = await Promise.all([
+    const [usersRes, pluginsRes, auditRes, healthRes] = await Promise.all([
       fetch("/api/admin/users"),
       fetch("/api/admin/plugins"),
       fetch("/api/admin/audit-logs"),
+      fetch("/api/admin/system-health"),
     ]);
     if (usersRes.status === 403) {
       setForbidden(true);
@@ -64,15 +89,18 @@ export function AdminClient() {
     if (usersRes.ok) setUsers(await usersRes.json());
     if (pluginsRes.ok) setPlugins(await pluginsRes.json());
     if (auditRes.ok) setLogs(await auditRes.json());
+    if (healthRes.ok) setHealth((await healthRes.json()).checks);
 
     // OWNER-only — a plain ADMIN will get 403 here, which is fine, the
-    // section below just won't render for them.
+    // sections below just won't render for them.
     const aiRes = await fetch("/api/admin/ai-settings");
     if (aiRes.ok) {
       const data = await aiRes.json();
       setAiSettings(data);
       setOrderInput(data.order.join(","));
     }
+    const settingsRes = await fetch("/api/admin/settings");
+    if (settingsRes.ok) setSettings(await settingsRes.json());
   }
 
   useEffect(() => {
@@ -93,6 +121,15 @@ export function AdminClient() {
     load();
   }
 
+  async function markVerified(id: string) {
+    await fetch(`/api/admin/plugins/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ markVerified: true }),
+    });
+    load();
+  }
+
   async function addPlugin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -103,7 +140,11 @@ export function AdminClient() {
         slug: form.get("slug"),
         name: form.get("name"),
         description: form.get("description"),
+        author: form.get("author") || undefined,
         officialUrl: form.get("officialUrl") || undefined,
+        documentationUrl: form.get("documentationUrl") || undefined,
+        category: form.get("category") || undefined,
+        tags: form.get("tags") || undefined,
       }),
     });
     if (res.ok) {
@@ -176,9 +217,60 @@ export function AdminClient() {
     load();
   }
 
+  async function saveSettings(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSettingsError(null);
+    setSettingsSaved(false);
+    const form = new FormData(e.currentTarget);
+    const res = await fetch("/api/admin/settings", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        siteName: form.get("siteName"),
+        registrationEnabled: form.get("registrationEnabled") ? "true" : "false",
+        defaultMinecraftVersion: form.get("defaultMinecraftVersion"),
+        maintenanceMode: form.get("maintenanceMode") ? "true" : "false",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setSettings(data);
+      setSettingsSaved(true);
+    } else {
+      setSettingsError(data.error ?? "Could not save settings");
+    }
+  }
+
   return (
     <div className="space-y-8 px-6 py-10">
       <h2 className="text-base font-semibold">Admin Panel</h2>
+
+      {health && (
+        <section className="space-y-2">
+          <h3 className="font-medium">System Health</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {health.map((check) => (
+              <Panel key={check.name} className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">{check.name}</p>
+                  <p className="text-xs text-slate-500">{check.detail}</p>
+                </div>
+                <span
+                  className={`font-mono text-xs px-2 py-1 border rounded-md ${
+                    check.status === "healthy"
+                      ? "border-emerald-500 text-emerald-400"
+                      : check.status === "warning"
+                        ? "border-amber-500 text-amber-400"
+                        : "border-red-500 text-red-400"
+                  }`}
+                >
+                  {check.status}
+                </span>
+              </Panel>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-2">
         <h3 className="font-medium">Users</h3>
@@ -203,10 +295,18 @@ export function AdminClient() {
         <h3 className="font-medium">Plugin Registry</h3>
         {plugins.map((p) => (
           <Panel key={p.id}>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
                 <p className="text-sm font-medium">
                   {p.name} <span className="font-mono text-xs text-slate-500">({p.slug})</span>
+                </p>
+                <p className="mt-0.5 font-mono text-xs text-slate-500">
+                  {p.author ? `by ${p.author} · ` : ""}
+                  {p.category ?? "uncategorized"}
+                  {p.tags ? ` · ${p.tags}` : ""}
+                </p>
+                <p className="mt-0.5 font-mono text-xs text-slate-500">
+                  Last verified: {p.lastVerifiedAt ? new Date(p.lastVerifiedAt).toLocaleDateString() : "never"}
                 </p>
                 <ul className="mt-1 font-mono text-xs text-slate-500">
                   {p.versions.length === 0 && <li>no versions</li>}
@@ -217,9 +317,14 @@ export function AdminClient() {
                   ))}
                 </ul>
               </div>
-              <Button variant="secondary" onClick={() => togglePlugin(p.id, !p.isActive)}>
-                {p.isActive ? "Deactivate" : "Activate"}
-              </Button>
+              <div className="flex shrink-0 flex-col gap-2">
+                <Button variant="secondary" onClick={() => markVerified(p.id)}>
+                  Mark Verified
+                </Button>
+                <Button variant="secondary" onClick={() => togglePlugin(p.id, !p.isActive)}>
+                  {p.isActive ? "Deactivate" : "Activate"}
+                </Button>
+              </div>
             </div>
           </Panel>
         ))}
@@ -229,8 +334,19 @@ export function AdminClient() {
           <form onSubmit={addPlugin} className="mt-3 flex flex-wrap gap-2">
             <Input name="slug" placeholder="slug (e.g. worldedit)" required className="flex-1 min-w-[140px]" />
             <Input name="name" placeholder="Name" required className="flex-1 min-w-[140px]" />
+            <Input name="author" placeholder="Author (optional)" className="flex-1 min-w-[140px]" />
+            <select name="category" className="flex-1 min-w-[140px] border border-base-600 bg-base-950 px-3 py-2 text-sm">
+              <option value="">Category (optional)</option>
+              {PLUGIN_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <Input name="tags" placeholder="Tags, comma-separated (optional)" className="flex-1 min-w-[140px]" />
             <Input name="description" placeholder="Description" required className="flex-1 min-w-[140px]" />
             <Input name="officialUrl" type="url" placeholder="Website (optional)" className="flex-1 min-w-[140px]" />
+            <Input name="documentationUrl" type="url" placeholder="Docs URL (optional)" className="flex-1 min-w-[140px]" />
             <Button type="submit">Add</Button>
           </form>
         </Panel>
@@ -309,13 +425,42 @@ export function AdminClient() {
         </section>
       )}
 
+      {settings && (
+        <section className="space-y-2">
+          <h3 className="font-medium">Settings</h3>
+          <Panel>
+            {settingsError && <p className="mb-3 text-sm text-red-400">{settingsError}</p>}
+            {settingsSaved && <p className="mb-3 text-sm text-emerald-400">Settings saved.</p>}
+            <form onSubmit={saveSettings} className="space-y-3">
+              <label className="block text-sm text-slate-400">
+                Site name
+                <Input name="siteName" defaultValue={settings.siteName} className="mt-1" />
+              </label>
+              <label className="block text-sm text-slate-400">
+                Default Minecraft version
+                <Input name="defaultMinecraftVersion" defaultValue={settings.defaultMinecraftVersion} className="mt-1" />
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-400">
+                <input type="checkbox" name="registrationEnabled" defaultChecked={settings.registrationEnabled === "true"} />
+                Allow new user registration
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-400">
+                <input type="checkbox" name="maintenanceMode" defaultChecked={settings.maintenanceMode === "true"} />
+                Maintenance mode (non-admin visitors see a maintenance page)
+              </label>
+              <Button type="submit">Save Settings</Button>
+            </form>
+          </Panel>
+        </section>
+      )}
+
       <section className="space-y-2">
         <h3 className="font-medium">Audit Log</h3>
         <Panel>
           <ul className="font-mono text-xs text-slate-500 space-y-1 max-h-60 overflow-y-auto">
             {logs.map((l) => (
               <li key={l.id}>
-                {new Date(l.createdAt).toLocaleString()} — {l.action}
+                {new Date(l.createdAt).toLocaleString()} — {l.actor ?? "system"} — {l.action}
               </li>
             ))}
           </ul>

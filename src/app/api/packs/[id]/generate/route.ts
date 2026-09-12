@@ -6,6 +6,7 @@ import { fromJsonString } from "@/lib/json";
 import { packGeneratorService, PlanValidationError } from "@/services/PackGeneratorService";
 import { rateLimit } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
+import { notify } from "@/lib/notifications";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -59,11 +60,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       where: { id: pack.id },
       data: { status: "READY", filePath: result.filePath, fileSizeBytes: result.fileSizeBytes },
     });
+    await notify(session.id, "pack_ready", `"${pack.name}" is ready to download.`);
     return NextResponse.json({ id: pack.id, status: "READY" });
   } catch (err) {
     const message = err instanceof PlanValidationError ? err.issues.join(" | ") : "Pack generation failed";
     logger.error({ packId: pack.id, err }, "Pack generation failed");
     await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "FAILED", errorMessage: message } });
+    await notify(session.id, "pack_failed", `"${pack.name}" failed to generate: ${message}`);
     return NextResponse.json({ error: message }, { status: 422 });
   }
 }

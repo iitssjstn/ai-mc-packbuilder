@@ -4,6 +4,7 @@ import { requireAuth, isSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { authenticationService } from "@/services/AuthenticationService";
 import { rateLimit } from "@/lib/rateLimit";
+import { notify } from "@/lib/notifications";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -56,6 +57,7 @@ export async function PUT(req: NextRequest) {
 
   try {
     const updated = await authenticationService.updateOwnProfile(session.id, currentPassword, changes);
+    if (changes.newPassword) await notify(session.id, "password_changed", "Your password was changed.");
     return NextResponse.json({ id: updated.id, email: updated.email, username: updated.username, role: updated.role });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 400 });

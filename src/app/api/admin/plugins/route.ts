@@ -23,7 +23,12 @@ const pluginCreateSchema = z.object({
   slug: z.string().min(1).max(64).regex(/^[a-z0-9-]+$/),
   name: z.string().min(1).max(128),
   description: z.string().min(1).max(1000),
+  author: z.string().max(128).optional(),
   officialUrl: z.string().url().optional(),
+  documentationUrl: z.string().url().optional(),
+  repositoryUrl: z.string().url().optional(),
+  category: z.string().max(64).optional(),
+  tags: z.string().max(300).optional(),
   license: z.string().max(128).optional(),
 });
 
