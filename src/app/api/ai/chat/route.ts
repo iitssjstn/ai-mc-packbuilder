@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { aiService } from "@/services/AIService";
+import { toJsonValue } from "@/lib/json";
 
 const chatSchema = z.object({
   conversationId: z.string().uuid().optional(),
@@ -51,12 +52,12 @@ export async function POST(req: NextRequest) {
         conversationId: conversation.id,
         role: "ASSISTANT",
         content: reply,
-        structuredData: plan ?? undefined,
+        structuredData: plan ? toJsonValue(plan) : undefined,
       },
     });
 
     if (plan) {
-      await prisma.aiConversation.update({ where: { id: conversation.id }, data: { planDraft: plan } });
+      await prisma.aiConversation.update({ where: { id: conversation.id }, data: { planDraft: toJsonValue(plan) } });
     }
 
     return NextResponse.json({ conversationId: conversation.id, reply, plan });
