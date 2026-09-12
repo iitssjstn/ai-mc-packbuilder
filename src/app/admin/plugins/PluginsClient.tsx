@@ -58,6 +58,16 @@ export function PluginsClient() {
     load();
   }
 
+  async function removePlugin(id: string, name: string) {
+    if (!window.confirm(`Permanently delete "${name}" from the registry? This cannot be undone.`)) return;
+    const res = await fetch(`/api/admin/plugins/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Could not delete plugin");
+    }
+    load();
+  }
+
   async function markVerified(id: string) {
     await fetch(`/api/admin/plugins/${id}`, {
       method: "PATCH",
@@ -188,6 +198,9 @@ export function PluginsClient() {
               </Button>
               <Button variant="secondary" onClick={() => togglePlugin(p.id, !p.isActive)}>
                 {p.isActive ? "Deactivate" : "Activate"}
+              </Button>
+              <Button variant="secondary" onClick={() => removePlugin(p.id, p.name)}>
+                Delete
               </Button>
             </div>
           </div>
