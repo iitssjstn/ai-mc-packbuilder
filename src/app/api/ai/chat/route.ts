@@ -6,6 +6,7 @@ import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { aiService } from "@/services/AIService";
 import { toJsonString } from "@/lib/json";
+import { logger } from "@/lib/logger";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -70,7 +71,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ conversationId: conversation.id, reply, plan });
-  } catch {
+  } catch (err) {
+    // Was previously swallowed entirely — logging it is the only way to
+    // tell "no keys configured" apart from "every provider errored" apart
+    // from "decrypt failed" etc. from the docker logs.
+    logger.error({ err }, "AI chat failed — all configured providers/keys exhausted or errored");
     return NextResponse.json(
       { error: "AI service is currently unavailable. Please try again shortly." },
       { status: 503 }
