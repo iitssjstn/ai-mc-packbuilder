@@ -48,13 +48,16 @@ export function requireAdmin(): SessionUser | NextResponse {
   return session;
 }
 
-export function setSessionCookie(token: string) {
+export function setSessionCookie(token: string, rememberMe = false) {
   cookies().set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60,
+    // "Remember me" unchecked: a session cookie (no maxAge) that the
+    // browser drops on close, rather than always persisting for a week
+    // regardless of what the user asked for.
+    ...(rememberMe ? { maxAge: 30 * 24 * 60 * 60 } : {}),
   });
 }
 

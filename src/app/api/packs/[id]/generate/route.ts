@@ -52,20 +52,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     );
   }
 
-  await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "GENERATING", errorMessage: null } });
+  await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "GENERATING", errorMessage: null, generationStep: null } });
 
   try {
     const result = await packGeneratorService.generate(pack.id, parsed.data);
     await prisma.serverPack.update({
       where: { id: pack.id },
-      data: { status: "READY", filePath: result.filePath, fileSizeBytes: result.fileSizeBytes },
+      data: { status: "READY", filePath: result.filePath, fileSizeBytes: result.fileSizeBytes, generationStep: null },
     });
     await notify(session.id, "pack_ready", `"${pack.name}" is ready to download.`);
     return NextResponse.json({ id: pack.id, status: "READY" });
   } catch (err) {
     const message = err instanceof PlanValidationError ? err.issues.join(" | ") : "Pack generation failed";
     logger.error({ packId: pack.id, err }, "Pack generation failed");
-    await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "FAILED", errorMessage: message } });
+    await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "FAILED", errorMessage: message, generationStep: null } });
     await notify(session.id, "pack_failed", `"${pack.name}" failed to generate: ${message}`);
     return NextResponse.json({ error: message }, { status: 422 });
   }

@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1).max(128),
+  rememberMe: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -29,8 +30,8 @@ export async function POST(req: NextRequest) {
     const user = await authenticationService.verifyCredentials(parsed.data.email, parsed.data.password);
     if (!user) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
 
-    const token = authenticationService.issueToken(user.id, user.role as Role);
-    setSessionCookie(token);
+    const token = authenticationService.issueToken(user.id, user.role as Role, parsed.data.rememberMe);
+    setSessionCookie(token, parsed.data.rememberMe);
 
     return NextResponse.json({ id: user.id, email: user.email, username: user.username, role: user.role });
   } catch (err) {

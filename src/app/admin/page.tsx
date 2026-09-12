@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
+import { AdminShell } from "@/components/AdminShell";
 import { AdminClient } from "./AdminClient";
 
 // Not just "logged in" — must actually be ADMIN/OWNER. Anyone else
@@ -10,5 +11,9 @@ export default function AdminPage() {
   const user = getSessionUser();
   if (!user) redirect("/login?redirect=/admin");
   if (user.role !== "ADMIN" && user.role !== "OWNER") redirect("/");
-  return <AdminClient />;
+  return (
+    <AdminShell>
+      <AdminClient />
+    </AdminShell>
+  );
 }

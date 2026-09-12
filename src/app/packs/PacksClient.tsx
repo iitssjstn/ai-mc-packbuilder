@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Panel, Button } from "@/components/ui";
 
 interface Pack {
@@ -87,7 +88,9 @@ export function PacksClient() {
         {packs.map((pack) => (
           <Panel key={pack.id} className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="font-medium truncate">{pack.name}</p>
+              <Link href={`/packs/${pack.id}`} className="font-medium truncate hover:text-emerald-400 hover:underline">
+                {pack.name}
+              </Link>
               <p className="font-mono text-xs text-slate-500">
                 v{pack.version} · {pack.minecraftVersionId} · {new Date(pack.createdAt).toLocaleDateString()}
               </p>

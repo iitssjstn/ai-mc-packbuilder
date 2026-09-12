@@ -61,9 +61,9 @@ export class AuthenticationService {
     return prisma.user.update({ where: { id: userId }, data });
   }
 
-  issueToken(userId: string, role: JwtPayload["role"]): string {
+  issueToken(userId: string, role: JwtPayload["role"], rememberMe = false): string {
     return jwt.sign({ sub: userId, role } as JwtPayload, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"],
+      expiresIn: (rememberMe ? "30d" : env.JWT_EXPIRES_IN) as jwt.SignOptions["expiresIn"],
     });
   }
 

@@ -15,6 +15,13 @@ interface ConversationSummary {
   hasPlan: boolean;
 }
 
+const GENERATION_STEPS = [
+  { key: "checking_compatibility", label: "Checking compatibility" },
+  { key: "generating_configs", label: "Generating configurations" },
+  { key: "downloading_plugins", label: "Downloading plugins" },
+  { key: "validating", label: "Validating & packaging" },
+];
+
 const QUICK_SUGGESTIONS = [
   { label: "Survival SMP", prompt: "I want a survival SMP with claims, economy, and homes for about 30 players." },
   { label: "Skyblock", prompt: "I want a skyblock server with an economy, shops, and island upgrades." },
@@ -41,6 +48,7 @@ export function BuilderClient() {
   const [plan, setPlan] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +157,13 @@ export function BuilderClient() {
       }
 
       setStatus("Generating your server pack...");
+      const pollHandle = setInterval(async () => {
+        const pollRes = await fetch(`/api/packs/${createData.id}`);
+        if (pollRes.ok) setCurrentStep((await pollRes.json()).generationStep);
+      }, 1200);
       const genRes = await fetch(`/api/packs/${createData.id}/generate`, { method: "POST" });
+      clearInterval(pollHandle);
+      setCurrentStep(null);
       const genData = await genRes.json();
       if (!genRes.ok) {
         setStatus(`Could not generate pack: ${genData.error}`);
@@ -355,8 +369,29 @@ export function BuilderClient() {
               <Button variant="secondary" onClick={saveDraft} disabled={busy}>
                 Save as Draft
               </Button>
-              {status && <span className="text-sm text-slate-400">{status}</span>}
+              {status && !currentStep && <span className="text-sm text-slate-400">{status}</span>}
             </div>
+
+            {currentStep && (
+              <div className="mt-4 space-y-1.5 border-t border-base-700 pt-4">
+                {GENERATION_STEPS.map((step, i) => {
+                  const currentIndex = GENERATION_STEPS.findIndex((s) => s.key === currentStep);
+                  const done = i < currentIndex;
+                  const active = i === currentIndex;
+                  return (
+                    <div
+                      key={step.key}
+                      className={`flex items-center gap-2 text-sm ${
+                        done ? "text-emerald-400" : active ? "text-slate-200" : "text-slate-500"
+                      }`}
+                    >
+                      <span>{done ? "✓" : active ? "●" : "○"}</span>
+                      {step.label}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </Panel>
         )}
       </div>

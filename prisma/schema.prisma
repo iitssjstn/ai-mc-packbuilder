@@ -239,6 +239,7 @@ model ServerPack {
   minecraftVersionId String
   serverSoftwareId   String
   status             String   @default("DRAFT") // PackStatus
+  generationStep     String?  // e.g. "checking_compatibility" | "generating_configs" | "downloading_plugins" | "validating" — set while status is GENERATING, polled by the client for a progress stepper
   planJson           String   // JSON-encoded — the validated, structured server plan
   filePath           String?  // path in storage adapter, not publicly guessable
   fileSizeBytes      Int?

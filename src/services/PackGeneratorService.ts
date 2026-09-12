@@ -95,11 +95,16 @@ export class PackGeneratorService {
    * always cleaned up, success or failure.
    */
   async generate(packId: string, plan: ServerPlan): Promise<GeneratedPack> {
+    const setStep = (generationStep: string) => prisma.serverPack.update({ where: { id: packId }, data: { generationStep } });
+
+    await setStep("checking_compatibility");
     const validated = await this.validatePlan(plan);
 
     const jobId = crypto.randomUUID(); // unpredictable temp dir name
     const tmpDir = path.join(this.storageRoot, "_tmp", jobId);
     await fsp.mkdir(tmpDir, { recursive: true });
+
+    await setStep("generating_configs");
 
     try {
       await this.writeFile(tmpDir, "eula.txt", configurationService.renderEula().content);
@@ -140,6 +145,7 @@ export class PackGeneratorService {
 
       const pluginsDir = path.join(tmpDir, "plugins");
       await fsp.mkdir(pluginsDir, { recursive: true });
+      await setStep("downloading_plugins");
 
       const downloadTargets = pluginRecords
         .filter(Boolean)
@@ -165,6 +171,7 @@ export class PackGeneratorService {
       }
 
       const zipPath = path.join(this.storageRoot, `${packId}.zip`);
+      await setStep("validating");
       const fileSizeBytes = await this.zipDirectory(tmpDir, zipPath);
 
       return { filePath: zipPath, fileSizeBytes };

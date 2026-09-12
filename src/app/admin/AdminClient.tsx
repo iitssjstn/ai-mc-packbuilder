@@ -57,6 +57,13 @@ interface SiteSettings {
   defaultMinecraftVersion: string;
   maintenanceMode: "true" | "false";
 }
+interface Stats {
+  totalUsers: number;
+  totalPacks: number;
+  packsReady: number;
+  pluginCount: number;
+  failedGenerations: number;
+}
 
 const SOFTWARE_OPTIONS = ["PAPER", "PURPUR", "VANILLA"] as const;
 
@@ -74,13 +81,15 @@ export function AdminClient() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [stats, setStats] = useState<Stats | null>(null);
 
   async function load() {
-    const [usersRes, pluginsRes, auditRes, healthRes] = await Promise.all([
+    const [usersRes, pluginsRes, auditRes, healthRes, statsRes] = await Promise.all([
       fetch("/api/admin/users"),
       fetch("/api/admin/plugins"),
       fetch("/api/admin/audit-logs"),
       fetch("/api/admin/system-health"),
+      fetch("/api/admin/stats"),
     ]);
     if (usersRes.status === 403) {
       setForbidden(true);
@@ -90,6 +99,7 @@ export function AdminClient() {
     if (pluginsRes.ok) setPlugins(await pluginsRes.json());
     if (auditRes.ok) setLogs(await auditRes.json());
     if (healthRes.ok) setHealth((await healthRes.json()).checks);
+    if (statsRes.ok) setStats(await statsRes.json());
 
     // OWNER-only — a plain ADMIN will get 403 here, which is fine, the
     // sections below just won't render for them.
@@ -243,10 +253,28 @@ export function AdminClient() {
 
   return (
     <div className="space-y-8 px-6 py-10">
-      <h2 className="text-base font-semibold">Admin Panel</h2>
+      <div id="overview">
+        <h2 className="text-base font-semibold">Admin Panel</h2>
+        {stats && (
+          <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-5">
+            {[
+              { label: "Total Users", value: stats.totalUsers },
+              { label: "Total Server Packs", value: stats.totalPacks },
+              { label: "Packs Generated", value: stats.packsReady },
+              { label: "Plugin Count", value: stats.pluginCount },
+              { label: "Failed Generations", value: stats.failedGenerations },
+            ].map((s) => (
+              <Panel key={s.label} className="text-center">
+                <p className="text-2xl font-semibold text-emerald-400">{s.value}</p>
+                <p className="mt-1 text-xs text-slate-500">{s.label}</p>
+              </Panel>
+            ))}
+          </div>
+        )}
+      </div>
 
       {health && (
-        <section className="space-y-2">
+        <section id="health" className="space-y-2">
           <h3 className="font-medium">System Health</h3>
           <div className="grid gap-2 sm:grid-cols-2">
             {health.map((check) => (
@@ -272,7 +300,7 @@ export function AdminClient() {
         </section>
       )}
 
-      <section className="space-y-2">
+      <section id="users" className="space-y-2">
         <h3 className="font-medium">Users</h3>
         {users.map((u) => (
           <Panel key={u.id} className="flex items-center justify-between">
@@ -291,7 +319,7 @@ export function AdminClient() {
         ))}
       </section>
 
-      <section className="space-y-2">
+      <section id="plugins" className="space-y-2">
         <h3 className="font-medium">Plugin Registry</h3>
         {plugins.map((p) => (
           <Panel key={p.id}>
@@ -392,7 +420,7 @@ export function AdminClient() {
       </section>
 
       {aiSettings && (
-        <section className="space-y-2">
+        <section id="ai-providers" className="space-y-2">
           <h3 className="font-medium">AI Providers</h3>
           <p className="text-xs text-slate-500">
             Keys are stored encrypted in the database. Once saved, the value is never shown
@@ -426,7 +454,7 @@ export function AdminClient() {
       )}
 
       {settings && (
-        <section className="space-y-2">
+        <section id="settings" className="space-y-2">
           <h3 className="font-medium">Settings</h3>
           <Panel>
             {settingsError && <p className="mb-3 text-sm text-red-400">{settingsError}</p>}
@@ -454,7 +482,7 @@ export function AdminClient() {
         </section>
       )}
 
-      <section className="space-y-2">
+      <section id="audit" className="space-y-2">
         <h3 className="font-medium">Audit Log</h3>
         <Panel>
           <ul className="font-mono text-xs text-slate-500 space-y-1 max-h-60 overflow-y-auto">
