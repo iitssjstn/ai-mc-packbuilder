@@ -33,7 +33,9 @@ export function NavBar() {
     <header className="border-b border-base-700 bg-base-900">
       <div className="mx-auto max-w-3xl px-6 pt-6">
         <h1 className="text-lg font-semibold tracking-tight">
-          AI Minecraft Server Pack Builder
+          <Link href="/" className="hover:text-emerald-400 transition-colors">
+            AI Minecraft Server Pack Builder
+          </Link>
         </h1>
         <p className="mt-1 text-sm text-slate-400">
           Minecraft Java Edition — beschrijf je server, de AI doet de rest.
