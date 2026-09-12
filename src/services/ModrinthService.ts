@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import type { PrismaClient } from "@prisma/client";
 import type { SoftwareType } from "@/lib/enums";
 
 // Modrinth's API is public and free — no API key required, just a
@@ -91,6 +92,53 @@ export class ModrinthService {
     }
 
     return null;
+  }
+
+  /** Shared by both the single-import and bulk-import routes: finds the
+   * best search hit for a name, then imports it exactly like a manual
+   * pick would — same upsert-never-overwrite behavior. */
+  async importByName(prisma: PrismaClient, name: string) {
+    const hits = await this.search(name);
+    const hit = hits[0];
+    if (!hit) return { name, status: "not_found" as const };
+
+    const plugin = await prisma.plugin.upsert({
+      where: { slug: hit.slug },
+      update: {},
+      create: {
+        slug: hit.slug,
+        name: hit.title,
+        description: hit.description,
+        author: hit.author,
+        officialUrl: `https://modrinth.com/plugin/${hit.slug}`,
+        documentationUrl: `https://modrinth.com/plugin/${hit.slug}`,
+        lastVerifiedAt: new Date(),
+      },
+    });
+
+    let versionAdded = false;
+    try {
+      const best = await this.fetchBestVersion(hit.projectId);
+      if (best) {
+        await prisma.pluginVersion.upsert({
+          where: { pluginId_version: { pluginId: plugin.id, version: best.versionNumber } },
+          update: {},
+          create: {
+            pluginId: plugin.id,
+            version: best.versionNumber,
+            minecraftRange: best.minecraftRange,
+            compatibleSoftware: best.compatibleSoftware.join(","),
+            downloadUrl: best.downloadUrl,
+            checksum: best.checksumSha256,
+          },
+        });
+        versionAdded = true;
+      }
+    } catch {
+      // Metadata import already succeeded even if the version/file fetch failed.
+    }
+
+    return { name, status: "imported" as const, slug: hit.slug, title: hit.title, versionAdded };
   }
 }
 
