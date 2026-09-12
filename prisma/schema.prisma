@@ -84,7 +84,7 @@ model Plugin {
   officialUrl   String?
   license       String?
   isActive      Boolean  @default(true)
-  configSchema  Json?    // JSON Schema describing configurable options
+  configSchema  String?  // JSON-encoded JSON Schema describing configurable options
 
   versions      PluginVersion[]
   dependsOn     PluginDependency[] @relation("PluginDependsOn")
@@ -147,7 +147,7 @@ model Mod {
   officialUrl  String?
   license      String?
   isActive     Boolean  @default(true)
-  configSchema Json?
+  configSchema String?  // JSON-encoded
 
   versions     ModVersion[]
   dependsOn    ModDependency[] @relation("ModDependsOn")
@@ -202,7 +202,7 @@ model AiConversation {
   id        String   @id @default(uuid())
   userId    String
   title     String?
-  planDraft Json?    // latest structured server plan draft
+  planDraft String?  // JSON-encoded — latest structured server plan draft
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -215,7 +215,7 @@ model AiMessage {
   conversationId String
   role           String   // MessageRole: USER | ASSISTANT | SYSTEM
   content        String
-  structuredData Json?
+  structuredData String?  // JSON-encoded
   createdAt      DateTime @default(now())
 
   conversation AiConversation @relation(fields: [conversationId], references: [id])
@@ -231,7 +231,7 @@ model ServerPack {
   minecraftVersionId String
   serverSoftwareId   String
   status             String   @default("DRAFT") // PackStatus
-  planJson           Json     // the validated, structured server plan
+  planJson           String   // JSON-encoded — the validated, structured server plan
   filePath           String?  // path in storage adapter, not publicly guessable
   fileSizeBytes      Int?
   errorMessage       String?
@@ -317,7 +317,7 @@ model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
   action    String
-  details   Json?
+  details   String?  // JSON-encoded
   createdAt DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id])

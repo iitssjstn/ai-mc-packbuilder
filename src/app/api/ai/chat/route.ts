@@ -5,7 +5,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { aiService } from "@/services/AIService";
-import { toJsonValue } from "@/lib/json";
+import { toJsonString } from "@/lib/json";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -58,12 +58,12 @@ export async function POST(req: NextRequest) {
         conversationId: conversation.id,
         role: "ASSISTANT",
         content: reply,
-        structuredData: plan ? toJsonValue(plan) : undefined,
+        structuredData: plan ? toJsonString(plan) : undefined,
       },
     });
 
     if (plan) {
-      await prisma.aiConversation.update({ where: { id: conversation.id }, data: { planDraft: toJsonValue(plan) } });
+      await prisma.aiConversation.update({ where: { id: conversation.id }, data: { planDraft: toJsonString(plan) } });
     }
 
     return NextResponse.json({ conversationId: conversation.id, reply, plan });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { serverPlanSchema } from "@/schemas/serverPlan.schema";
+import { fromJsonString } from "@/lib/json";
 import { packGeneratorService, PlanValidationError } from "@/services/PackGeneratorService";
 import { rateLimit } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
@@ -32,7 +33,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: `Pack is already ${pack.status.toLowerCase()}` }, { status: 409 });
   }
 
-  const parsed = serverPlanSchema.safeParse(pack.planJson);
+  let storedPlan: unknown;
+  try {
+    storedPlan = fromJsonString(pack.planJson);
+  } catch {
+    return NextResponse.json(
+      { error: "Stored plan is corrupted — please rebuild it in the AI Builder" },
+      { status: 500 }
+    );
+  }
+
+  const parsed = serverPlanSchema.safeParse(storedPlan);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Stored plan is no longer valid — please rebuild it in the AI Builder" },

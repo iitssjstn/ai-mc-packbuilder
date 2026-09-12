@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { serverPlanSchema } from "@/schemas/serverPlan.schema";
 import { brandingService } from "@/services/BrandingService";
 import { env } from "@/lib/env";
-import { toJsonValue } from "@/lib/json";
+import { toJsonString } from "@/lib/json";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       name: parsed.data.server.name,
       minecraftVersionId: mcVersion.id,
       serverSoftwareId: software.id,
-      planJson: toJsonValue(parsed.data),
+      planJson: toJsonString(parsed.data),
       status: "DRAFT",
     },
   });
