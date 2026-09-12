@@ -29,6 +29,12 @@ export function PluginsClient() {
   const [forbidden, setForbidden] = useState(false);
   const [versionSoftware, setVersionSoftware] = useState<string[]>([]);
   const [versionError, setVersionError] = useState<string | null>(null);
+  const [importQuery, setImportQuery] = useState("");
+  const [importResults, setImportResults] = useState<
+    { projectId: string; slug: string; title: string; description: string; author: string }[]
+  >([]);
+  const [importBusy, setImportBusy] = useState<string | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/admin/plugins");
@@ -59,6 +65,40 @@ export function PluginsClient() {
       body: JSON.stringify({ markVerified: true }),
     });
     load();
+  }
+
+  async function searchModrinth(e: React.FormEvent) {
+    e.preventDefault();
+    setImportMessage(null);
+    const res = await fetch(`/api/admin/plugins/import/search?q=${encodeURIComponent(importQuery)}`);
+    if (res.ok) {
+      setImportResults(await res.json());
+    } else {
+      setImportMessage("Search failed");
+      setImportResults([]);
+    }
+  }
+
+  async function importFromModrinth(hit: { projectId: string; slug: string; title: string; description: string; author: string }) {
+    setImportBusy(hit.projectId);
+    setImportMessage(null);
+    const res = await fetch("/api/admin/plugins/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(hit),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setImportMessage(
+        data.versionAdded
+          ? `Imported "${hit.title}" with a real, verified download URL + checksum.`
+          : `Imported "${hit.title}" — no compatible Paper/Purpur file found, add a version manually.`
+      );
+      load();
+    } else {
+      setImportMessage(data.error ?? "Import failed");
+    }
+    setImportBusy(null);
   }
 
   async function addPlugin(e: React.FormEvent<HTMLFormElement>) {
@@ -153,6 +193,41 @@ export function PluginsClient() {
           </div>
         </Panel>
       ))}
+
+      <Panel>
+        <h4 className="text-sm font-medium">Import from Modrinth</h4>
+        <p className="mt-1 text-xs text-slate-500">
+          Pulls the real name, description, and — where a compatible Paper/Purpur file exists — the actual
+          download URL with a freshly computed SHA-256 checksum. No API key needed, Modrinth's API is public.
+        </p>
+        <form onSubmit={searchModrinth} className="mt-3 flex gap-2">
+          <Input
+            value={importQuery}
+            onChange={(e) => setImportQuery(e.target.value)}
+            placeholder="Search Modrinth (e.g. Vault, GriefPrevention, Multiverse)"
+            className="flex-1"
+          />
+          <Button type="submit">Search</Button>
+        </form>
+        {importMessage && <p className="mt-2 text-sm text-emerald-400">{importMessage}</p>}
+        <div className="mt-3 space-y-2">
+          {importResults.map((hit) => (
+            <div key={hit.projectId} className="flex items-center justify-between gap-3 border border-base-700 px-3 py-2">
+              <div className="min-w-0 text-sm">
+                <p className="truncate font-medium">
+                  {hit.title} <span className="font-mono text-xs text-slate-500">({hit.slug})</span>
+                </p>
+                <p className="truncate text-xs text-slate-500">
+                  by {hit.author} — {hit.description}
+                </p>
+              </div>
+              <Button variant="secondary" onClick={() => importFromModrinth(hit)} disabled={importBusy === hit.projectId}>
+                {importBusy === hit.projectId ? "Importing..." : "Import"}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Panel>
 
       <Panel>
         <h4 className="text-sm font-medium">Add Plugin</h4>
