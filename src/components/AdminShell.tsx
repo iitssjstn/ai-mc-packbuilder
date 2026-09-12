@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Package, Puzzle, Activity, ScrollText, Settings, ArrowLeft, User, LogOut, FileText } from "lucide-react";
+import { LayoutDashboard, Users, Package, Puzzle, Activity, ScrollText, Settings, ArrowLeft, User, LogOut, FileText, Clock } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/packs", label: "Server Packs", icon: Package },
+  { href: "/admin/generations", label: "Generations", icon: Clock },
   { href: "/admin/plugins", label: "Plugin Registry", icon: Puzzle },
   { href: "/admin/ai-providers", label: "AI Providers", icon: Package },
   { href: "/admin/health", label: "System Health", icon: Activity },

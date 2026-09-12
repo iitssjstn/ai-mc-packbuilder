@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Panel, Button } from "@/components/ui";
+import Link from "next/link";
 import { canManageUser } from "@/lib/permissions";
 import type { Role } from "@/lib/enums";
 
@@ -23,20 +24,40 @@ export function UsersClient() {
   const [me, setMe] = useState<Me | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
 
   async function load() {
-    const [usersRes, meRes] = await Promise.all([fetch("/api/admin/users"), fetch("/api/auth/me")]);
+    const params = new URLSearchParams({ page: String(page) });
+    if (search) params.set("q", search);
+    const [usersRes, meRes] = await Promise.all([fetch(`/api/admin/users?${params}`), fetch("/api/auth/me")]);
     if (usersRes.status === 403) {
       setForbidden(true);
       return;
     }
-    if (usersRes.ok) setUsers(await usersRes.json());
+    if (usersRes.ok) {
+      const data = await usersRes.json();
+      setUsers(data.items);
+      setTotal(data.total);
+      setPageSize(data.pageSize);
+    }
     if (meRes.ok) setMe(await meRes.json());
   }
 
   useEffect(() => {
     load();
-  }, []);
+  }, [page]);
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setPage(1);
+      load();
+    }, 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   async function toggleUser(id: string, block: boolean) {
     setError(null);
@@ -75,9 +96,17 @@ export function UsersClient() {
 
   if (forbidden) return <p className="px-6 py-10 text-sm text-slate-500">You do not have access to the admin panel.</p>;
 
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
   return (
     <div className="space-y-2 px-6 py-10">
       <h2 className="text-base font-semibold">Users</h2>
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by email or username..."
+        className="w-full max-w-sm rounded-md border border-base-600 bg-base-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500"
+      />
       {error && <p className="text-sm text-red-400">{error}</p>}
       {users.length === 0 && <p className="text-sm text-slate-500">No users found.</p>}
       {users.map((u) => {
@@ -90,7 +119,10 @@ export function UsersClient() {
           <Panel key={u.id} className="flex items-center justify-between gap-3">
             <div className="text-sm">
               <p>
-                {u.email} <span className="text-slate-500">({u.username})</span>
+                <Link href={`/admin/users/${u.id}`} className="hover:text-emerald-400 hover:underline">
+                  {u.email}
+                </Link>{" "}
+                <span className="text-slate-500">({u.username})</span>
               </p>
               <p className="font-mono text-xs text-slate-500">
                 {u.role} · {u.isBlocked ? "Blocked" : "Active"} · Joined {new Date(u.createdAt).toLocaleDateString()}
@@ -119,6 +151,20 @@ export function UsersClient() {
           </Panel>
         );
       })}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <Button variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+            Previous
+          </Button>
+          <span className="text-xs text-slate-500">
+            Page {page} of {totalPages}
+          </span>
+          <Button variant="secondary" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

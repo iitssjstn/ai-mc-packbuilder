@@ -53,14 +53,22 @@ export function BuilderClient() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  async function loadConversations() {
-    const res = await fetch("/api/ai/conversations");
+  async function loadConversations(q?: string) {
+    const res = await fetch(q ? `/api/ai/conversations?q=${encodeURIComponent(q)}` : "/api/ai/conversations");
     if (res.ok) setConversations(await res.json());
   }
 
   useEffect(() => {
     loadConversations();
   }, []);
+
+  // Debounced server-side search — matches title AND message content,
+  // not just whatever happened to already be loaded client-side.
+  useEffect(() => {
+    const handle = setTimeout(() => loadConversations(search || undefined), 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const searchParams = useSearchParams();
   useEffect(() => {
@@ -218,8 +226,6 @@ export function BuilderClient() {
     }
   }
 
-  const filteredConversations = conversations.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()));
-
   return (
     // Full-bleed breakout (see AppShell) — the conversation sidebar must
     // sit flush against the viewport edge, not centered inside the
@@ -267,10 +273,10 @@ export function BuilderClient() {
         </div>
         <div className="flex-1 overflow-y-auto px-2 pb-3">
           <p className="px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">Recent</p>
-          {filteredConversations.length === 0 && (
+          {conversations.length === 0 && (
             <p className="px-2 py-2 text-xs text-slate-500">No conversations yet.</p>
           )}
-          {filteredConversations.map((c) => (
+          {conversations.map((c) => (
             <div
               key={c.id}
               className={`group flex items-center justify-between gap-1 rounded-md px-2 py-2 text-sm transition-colors ${

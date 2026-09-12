@@ -1,35 +1,51 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requireRole, isSessionUser } from "@/lib/session";
-import { canManageUser } from "@/lib/permissions";
-import { Role } from "@/lib/enums";
-import { audit } from "@/lib/audit";
+import { requireAdmin, isSessionUser } from "@/lib/session";
 
-// All routes here touch the database/cookies at request time and
-// must never be statically prerendered during `next build` (which
-// runs against a placeholder DATABASE_URL with no real database).
 export const dynamic = "force-dynamic";
 
-
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  const session = requireAuth();
+export async function GET(_req: Request, { params }: { params: { id: string } }) {
+  const session = requireAdmin();
   if (!isSessionUser(session)) return session;
-  const roleError = requireRole(session, "OWNER");
-  if (roleError) return roleError;
 
-  if (params.id === session.id) {
-    return NextResponse.json({ error: "You cannot delete your own account from the admin panel" }, { status: 400 });
-  }
+  const user = await prisma.user.findUnique({
+    where: { id: params.id },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      role: true,
+      isBlocked: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const target = await prisma.user.findUnique({ where: { id: params.id } });
-  if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const [packCount, conversationCount, recentPacks, recentAudit, credits] = await Promise.all([
+    prisma.serverPack.count({ where: { userId: user.id } }),
+    prisma.aiConversation.count({ where: { userId: user.id } }),
+    prisma.serverPack.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, status: true, createdAt: true },
+    }),
+    prisma.auditLog.findMany({
+      where: { details: { contains: user.id } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: { action: true, createdAt: true },
+    }),
+    prisma.creditBalance.findUnique({ where: { userId: user.id } }),
+  ]);
 
-  if (!canManageUser(session.role as Role, target.role as Role)) {
-    await audit(session.id, "admin_action_rejected", { action: "delete", targetUserId: target.id });
-    return NextResponse.json({ error: "You do not have permission to manage this account" }, { status: 403 });
-  }
-
-  await prisma.user.delete({ where: { id: target.id } });
-  await audit(session.id, "user_deleted", { targetUserId: target.id });
-  return new NextResponse(null, { status: 204 });
+  return NextResponse.json({
+    ...user,
+    packCount,
+    conversationCount,
+    creditBalance: credits?.balance ?? 0,
+    recentPacks,
+    recentAudit,
+  });
 }

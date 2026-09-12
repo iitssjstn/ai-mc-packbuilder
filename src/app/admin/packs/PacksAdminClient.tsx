@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Panel } from "@/components/ui";
+import Link from "next/link";
+import { Panel, Button } from "@/components/ui";
 
 interface AdminPack {
   id: string;
@@ -15,19 +16,29 @@ interface AdminPack {
 
 export function PacksAdminClient() {
   const [packs, setPacks] = useState<AdminPack[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/packs").then(async (res) => {
+    fetch(`/api/admin/packs?page=${page}`).then(async (res) => {
       if (res.status === 403) {
         setForbidden(true);
         return;
       }
-      if (res.ok) setPacks(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setPacks(data.items);
+        setTotal(data.total);
+        setPageSize(data.pageSize);
+      }
     });
-  }, []);
+  }, [page]);
 
   if (forbidden) return <p className="px-6 py-10 text-sm text-slate-500">You do not have access to the admin panel.</p>;
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="space-y-2 px-6 py-10">
@@ -36,9 +47,10 @@ export function PacksAdminClient() {
       {packs.map((p) => (
         <Panel key={p.id} className="flex items-center justify-between gap-4">
           <div className="min-w-0 text-sm">
-            <p className="truncate">
-              {p.name} <span className="text-slate-500">by {p.owner}</span>
-            </p>
+            <Link href={`/packs/${p.id}`} className="truncate hover:text-emerald-400 hover:underline">
+              {p.name}
+            </Link>{" "}
+            <span className="text-slate-500">by {p.owner}</span>
             <p className="font-mono text-xs text-slate-500">
               {p.minecraftVersionId} · {new Date(p.createdAt).toLocaleDateString()}
             </p>
@@ -57,6 +69,20 @@ export function PacksAdminClient() {
           </span>
         </Panel>
       ))}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <Button variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+            Previous
+          </Button>
+          <span className="text-xs text-slate-500">
+            Page {page} of {totalPages}
+          </span>
+          <Button variant="secondary" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

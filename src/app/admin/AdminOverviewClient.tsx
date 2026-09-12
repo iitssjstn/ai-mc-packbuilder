@@ -49,7 +49,7 @@ export function AdminOverviewClient() {
         return;
       }
       if (statsRes.ok) setStats(await statsRes.json());
-      if (usersRes.ok) setUsers((await usersRes.json()).slice(0, 5));
+      if (usersRes.ok) setUsers((await usersRes.json()).items.slice(0, 5));
       if (packsRes.ok) setPacks((await packsRes.json()).slice(0, 5));
       if (healthRes.ok) setHealth((await healthRes.json()).checks);
     });
