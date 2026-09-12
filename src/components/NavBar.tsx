@@ -22,6 +22,7 @@ export function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
+  const isHomepage = pathname === "/";
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -47,7 +48,7 @@ export function NavBar() {
 
   return (
     <header className="border-b border-base-700 bg-base-900">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <span className="flex h-8 w-8 items-center justify-center rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
             <Box size={18} />
@@ -62,35 +63,40 @@ export function NavBar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {links.map((link) => {
-            const Icon = link.icon;
-            const active = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
-                  active
-                    ? "rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                    : "border border-transparent text-slate-400 hover:text-slate-200"
-                }`}
+        {/* Marketing homepage keeps the header minimal (logo + CTA only) —
+            the full app navigation (and the ability to log out) lives on
+            every other page, where it's actually needed. */}
+        {!isHomepage && (
+          <nav className="hidden items-center gap-1 md:flex">
+            {links.map((link) => {
+              const Icon = link.icon;
+              const active = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? "rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                      : "border border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Icon size={15} />
+                  {link.label}
+                </Link>
+              );
+            })}
+            {me && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 border border-transparent px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
               >
-                <Icon size={15} />
-                {link.label}
-              </Link>
-            );
-          })}
-          {me && (
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 border border-transparent px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
-            >
-              <LogOut size={15} />
-              Uitloggen
-            </button>
-          )}
-        </nav>
+                <LogOut size={15} />
+                Uitloggen
+              </button>
+            )}
+          </nav>
+        )}
 
         <Link
           href={me ? "/builder" : "/login"}

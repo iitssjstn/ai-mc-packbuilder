@@ -53,15 +53,15 @@ export default function HomePage() {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-6 py-12 sm:px-10">
+      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-6 py-20 sm:px-12 sm:py-28">
         <Image
           src="/images/hero-bg.png"
           alt=""
           fill
           priority
-          className="pointer-events-none object-cover opacity-60"
+          className="pointer-events-none object-cover"
+          style={{ maskImage: "radial-gradient(ellipse at center, black 55%, transparent 100%)" }}
         />
-        <div className="pointer-events-none absolute inset-0 bg-base-900/40" />
         <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-mono text-xs tracking-widest text-emerald-400">
@@ -69,7 +69,7 @@ export default function HomePage() {
               AI-POWERED
             </span>
 
-            <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl">
+            <h1 className="mt-5 text-5xl font-bold leading-tight sm:text-6xl">
               Vertel wat je wilt.
               <br />
               <span className="text-emerald-400">Wij bouwen je server.</span>

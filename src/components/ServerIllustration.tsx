@@ -19,7 +19,7 @@ export function ServerIllustration() {
           {CHIPS.map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 border border-emerald-500/40 bg-base-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-lg"
+              className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-base-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-lg"
             >
               <Icon size={14} className="text-emerald-400" />
               {label}
@@ -27,17 +27,25 @@ export function ServerIllustration() {
           ))}
         </div>
 
-        <div className="relative h-56 w-56 shrink-0 sm:h-64 sm:w-64">
+        <div className="relative h-72 w-72 shrink-0 sm:h-96 sm:w-96">
+          {/* Glow burst behind the island for more visual punch — larger
+              than the island itself and centered, so it radiates outward. */}
+          <Image
+            src="/images/hero-island-glow.png"
+            alt=""
+            fill
+            className="pointer-events-none scale-150 object-contain opacity-70"
+          />
           <Image
             src="/images/hero-island.png"
             alt="Voxel-stijl eiland met huisje, waterval en portal — illustratie van een gegenereerd serverpack"
             fill
-            className="object-contain drop-shadow-2xl"
+            className="relative object-contain drop-shadow-2xl"
           />
         </div>
 
         {/* Floating checklist card */}
-        <div className="hidden flex-col gap-1.5 border border-base-700 bg-base-900 px-3 py-3 text-xs shadow-lg sm:flex">
+        <div className="hidden flex-col gap-1.5 rounded-md border border-base-700 bg-base-900 px-3 py-3 text-xs shadow-lg sm:flex">
           {CHECKLIST.map((item) => (
             <div key={item} className="flex items-center gap-1.5 text-slate-300">
               <CheckCircle2 size={13} className="shrink-0 text-emerald-400" />
@@ -48,7 +56,7 @@ export function ServerIllustration() {
       </div>
 
       {/* Speech-bubble callout */}
-      <div className="absolute -top-2 right-2 flex items-center gap-1.5 border border-emerald-500/40 bg-base-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-lg sm:right-6">
+      <div className="absolute -top-2 right-2 flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-base-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-lg sm:right-6">
         <Sparkles size={13} className="text-emerald-400" />
         /build my server
       </div>
