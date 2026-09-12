@@ -35,6 +35,11 @@ export function PluginsClient() {
   >([]);
   const [importBusy, setImportBusy] = useState<string | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [bulkNames, setBulkNames] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResults, setBulkResults] = useState<
+    { name: string; status: "imported" | "not_found" | "duplicate" | "error"; slug?: string; title?: string; versionAdded?: boolean; message?: string }[]
+  >([]);
 
   async function load() {
     const res = await fetch("/api/admin/plugins");
@@ -109,6 +114,37 @@ export function PluginsClient() {
       setImportMessage(data.error ?? "Import failed");
     }
     setImportBusy(null);
+  }
+
+  async function bulkImport(e: React.FormEvent) {
+    e.preventDefault();
+    setBulkResults([]);
+    // Dedupe here too (case-insensitive, trimmed) before it even
+    // leaves the browser — the backend dedupes again defensively, but
+    // no reason to send obvious duplicates from a pasted list at all.
+    const seen = new Set<string>();
+    const names = bulkNames
+      .split("\n")
+      .map((n) => n.trim())
+      .filter((n) => {
+        if (!n) return false;
+        const key = n.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    if (names.length === 0) return;
+
+    setBulkBusy(true);
+    const res = await fetch("/api/admin/plugins/import/bulk", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ names }),
+    });
+    const data = await res.json().catch(() => ({ results: [] }));
+    setBulkResults(data.results ?? []);
+    setBulkBusy(false);
+    load();
   }
 
   async function addPlugin(e: React.FormEvent<HTMLFormElement>) {
@@ -240,6 +276,51 @@ export function PluginsClient() {
             </div>
           ))}
         </div>
+      </Panel>
+
+      <Panel>
+        <h4 className="text-sm font-medium">Bulk Import from Modrinth</h4>
+        <p className="mt-1 text-xs text-slate-500">
+          One plugin name per line. For each name, the top Modrinth match gets imported the same way as above.
+          Duplicate names (and duplicate results — two names that resolve to the same plugin) are skipped.
+        </p>
+        <form onSubmit={bulkImport} className="mt-3 space-y-2">
+          <textarea
+            value={bulkNames}
+            onChange={(e) => setBulkNames(e.target.value)}
+            rows={5}
+            placeholder={"EssentialsX\nLuckPerms\nWorldGuard\n..."}
+            className="w-full border border-base-600 bg-base-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500"
+          />
+          <Button type="submit" disabled={bulkBusy}>
+            {bulkBusy ? "Importing..." : "Bulk Import"}
+          </Button>
+        </form>
+        {bulkResults.length > 0 && (
+          <ul className="mt-3 space-y-1 font-mono text-xs">
+            {bulkResults.map((r, i) => (
+              <li
+                key={i}
+                className={
+                  r.status === "imported"
+                    ? "text-emerald-400"
+                    : r.status === "duplicate"
+                      ? "text-slate-500"
+                      : "text-red-400"
+                }
+              >
+                {r.name} —{" "}
+                {r.status === "imported"
+                  ? `imported as "${r.slug}"${r.versionAdded ? "" : " (no compatible version found)"}`
+                  : r.status === "duplicate"
+                    ? `skipped, same plugin as "${r.slug}"`
+                    : r.status === "not_found"
+                      ? "no match found on Modrinth"
+                      : r.message ?? "failed"}
+              </li>
+            ))}
+          </ul>
+        )}
       </Panel>
 
       <Panel>
