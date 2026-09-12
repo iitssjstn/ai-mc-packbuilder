@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { serverPlanSchema } from "@/schemas/serverPlan.schema";
 import { brandingService } from "@/services/BrandingService";
 import { env } from "@/lib/env";
+import { toJsonValue } from "@/lib/json";
 
 export async function GET() {
   const session = requireAuth();
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
       name: parsed.data.server.name,
       minecraftVersionId: mcVersion.id,
       serverSoftwareId: software.id,
-      planJson: parsed.data,
+      planJson: toJsonValue(parsed.data),
       status: "DRAFT",
     },
   });
