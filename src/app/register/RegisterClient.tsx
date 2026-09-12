@@ -32,7 +32,7 @@ export function RegisterClient({ redirectTo }: { redirectTo: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
+    <div className="mx-auto max-w-md space-y-6 px-6 py-10">
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <Panel>

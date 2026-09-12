@@ -10,9 +10,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="nl">
-      <body className="font-sans bg-base-950 text-slate-100 min-h-screen">
+      <body className="overflow-x-hidden font-sans bg-base-950 text-slate-100 min-h-screen">
         <NavBar />
-        <main className="mx-auto max-w-[1400px] px-6 pt-4 pb-10">{children}</main>
+        {/* No padding here — pages that need it (builder/packs/admin/
+            account/login/register) apply their own. The homepage's
+            full-bleed background must start immediately after the
+            header with zero gap, which any padding here would create. */}
+        <main className="mx-auto max-w-[1400px]">{children}</main>
       </body>
     </html>
   );

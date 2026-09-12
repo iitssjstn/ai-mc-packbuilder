@@ -59,7 +59,7 @@ export function LoginClient({ redirectTo }: { redirectTo: string }) {
   if (setupComplete === null) return <p className="text-sm text-slate-500">Laden...</p>;
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
+    <div className="mx-auto max-w-md space-y-6 px-6 py-10">
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       {!setupComplete && (

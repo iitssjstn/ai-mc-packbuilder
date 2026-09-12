@@ -91,7 +91,7 @@ export function BuilderClient() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-6 py-10">
       <Panel className="min-h-[240px] flex flex-col gap-3">
         {messages.length === 0 && (
           <p className="text-sm text-slate-500">

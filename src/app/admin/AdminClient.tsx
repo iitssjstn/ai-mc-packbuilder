@@ -177,7 +177,7 @@ export function AdminClient() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-6 py-10">
       <h2 className="text-base font-semibold">Admin panel</h2>
 
       <section className="space-y-2">
