@@ -80,7 +80,7 @@ export default function AccountPage() {
   if (setupComplete === null) return <p className="text-sm text-slate-500">Laden...</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <h2 className="text-base font-semibold">Account</h2>
 
       {error && <p className="text-sm text-red-400">{error}</p>}

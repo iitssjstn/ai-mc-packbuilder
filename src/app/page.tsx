@@ -1,92 +1,162 @@
 import Link from "next/link";
+import Image from "next/image";
+import {
+  Zap,
+  Sparkles,
+  ArrowRight,
+  FolderOpen,
+  CheckCircle2,
+  MessageSquare,
+  Settings,
+  User,
+  Box,
+  Package,
+  Shield,
+  Users,
+} from "lucide-react";
 import { getSessionUser } from "@/lib/session";
 import { Panel } from "@/components/ui";
+import { ServerIllustration } from "@/components/ServerIllustration";
+
+const TRUST_ITEMS = ["Gratis te proberen", "Geen hosting nodig", "Paper & Purpur", "Eigen branding"];
+
+const FEATURES = [
+  {
+    icon: MessageSquare,
+    title: "01 · AI Builder",
+    text: "Beschrijf je server in gewone taal. De AI zet dat om in een gestructureerd plan — jij houdt de controle voordat er iets gegenereerd wordt.",
+  },
+  {
+    icon: Settings,
+    title: "02 · Compatibiliteit",
+    text: "Elke plugin wordt gecontroleerd op Minecraft-versie, server software, dependencies en conflicten voordat 'ie in je pack terechtkomt.",
+  },
+  {
+    icon: User,
+    title: "03 · Eigen branding",
+    text: "Servernaam, logo, Discord/Twitch-links — verwerkt in de MOTD, README en configuratie van je pack.",
+  },
+];
+
+const STATS = [
+  { icon: Zap, label: "Snel", sub: "Binnen enkele minuten" },
+  { icon: Package, label: "Volledig pack", sub: "Plugins + configs + branding" },
+  { icon: Shield, label: "Veilig", sub: "Compatibiliteitschecks" },
+  { icon: Users, label: "Voor iedereen", sub: "Van SMP tot netwerk" },
+];
 
 export default function HomePage() {
   const user = getSessionUser();
   const primaryHref = user ? "/builder" : "/account";
-  const primaryLabel = user ? "Ga naar de AI Builder" : "Begin met bouwen";
+  const primaryLabel = user ? "Ga naar de AI Builder" : "Aan de slag";
 
   return (
-    <div className="space-y-16 py-6">
+    <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden border border-base-700 bg-base-900 px-6 py-14 sm:px-10">
-        {/* Abstract voxel-grid backdrop — deliberately not a game screenshot */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "linear-gradient(#3ecf8e 1px, transparent 1px), linear-gradient(90deg, #3ecf8e 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
+      <section className="relative overflow-hidden border border-base-700 bg-base-900 px-6 py-12 sm:px-10">
+        <Image
+          src="/images/hero-bg.png"
+          alt=""
+          fill
+          priority
+          className="pointer-events-none object-cover opacity-60"
         />
-        <div className="relative">
-          <p className="font-mono text-xs tracking-widest text-emerald-400">
-            AI SERVERPAKKET BUILDER
-          </p>
-          <h1 className="mt-3 text-3xl sm:text-4xl font-semibold leading-tight">
-            Vertel wat je wilt.
-            <br />
-            <span className="text-emerald-400">Wij bouwen je server.</span>
-          </h1>
-          <p className="mt-4 max-w-xl text-slate-400">
-            AI-gestuurde Minecraft Java-serverpakketten — plugins, configuratie
-            en branding automatisch samengesteld op basis van een simpel
-            gesprek. Geen hosting: downloaden en zelf starten.
-          </p>
+        <div className="pointer-events-none absolute inset-0 bg-base-900/40" />
+        <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
+          <div>
+            <span className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-mono text-xs tracking-widest text-emerald-400">
+              <Zap size={13} />
+              AI-POWERED
+            </span>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href={primaryHref}
-              className="bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 hover:bg-emerald-400 transition-colors"
-            >
-              {primaryLabel}
-            </Link>
-            <Link
-              href={user ? "/packs" : "/account"}
-              className="border border-base-600 px-5 py-2.5 text-sm font-medium text-slate-200 hover:bg-base-800 transition-colors"
-            >
-              {user ? "Mijn Serverpacks" : "Inloggen"}
-            </Link>
+            <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl">
+              Vertel wat je wilt.
+              <br />
+              <span className="text-emerald-400">Wij bouwen je server.</span>
+            </h1>
+
+            <p className="mt-4 max-w-lg text-slate-400">
+              AI-gestuurde Minecraft Java-serverpakketten — plugins, configuratie
+              en branding automatisch samengesteld op basis van een simpel
+              gesprek. Geen hosting: downloaden en zelf starten.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href={primaryHref}
+                className="flex items-center gap-2 bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
+              >
+                <Sparkles size={16} />
+                {primaryLabel}
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                href={user ? "/packs" : "/account"}
+                className="flex items-center gap-2 border border-base-600 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-base-800"
+              >
+                <FolderOpen size={16} />
+                {user ? "Mijn Serverpacks" : "Inloggen"}
+              </Link>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
+              {TRUST_ITEMS.map((item) => (
+                <span key={item} className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-400" />
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 font-mono text-xs text-slate-500">
-            <span>Gratis te proberen</span>
-            <span>·</span>
-            <span>Geen hosting nodig</span>
-            <span>·</span>
-            <span>Paper &amp; Purpur</span>
-            <span>·</span>
-            <span>Eigen branding</span>
-          </div>
+          <ServerIllustration />
         </div>
       </section>
 
       {/* Feature strip */}
       <section className="grid gap-4 sm:grid-cols-3">
-        <Panel>
-          <h3 className="font-mono text-sm text-emerald-400">01 · AI Builder</h3>
-          <p className="mt-2 text-sm text-slate-400">
-            Beschrijf je server in gewone taal. De AI zet dat om in een
-            gestructureerd plan — jij houdt de controle voordat er iets
-            gegenereerd wordt.
-          </p>
-        </Panel>
-        <Panel>
-          <h3 className="font-mono text-sm text-emerald-400">02 · Compatibiliteit</h3>
-          <p className="mt-2 text-sm text-slate-400">
-            Elke plugin wordt gecontroleerd op Minecraft-versie, server
-            software, dependencies en conflicten voordat 'ie in je pack
-            terechtkomt.
-          </p>
-        </Panel>
-        <Panel>
-          <h3 className="font-mono text-sm text-emerald-400">03 · Eigen branding</h3>
-          <p className="mt-2 text-sm text-slate-400">
-            Servernaam, logo, Discord/Twitch-links — verwerkt in de MOTD,
-            README en configuratie van je pack.
-          </p>
-        </Panel>
+        {FEATURES.map(({ icon: Icon, title, text }) => (
+          <Panel key={title}>
+            <span className="flex h-9 w-9 items-center justify-center border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+              <Icon size={17} />
+            </span>
+            <h3 className="mt-3 font-mono text-sm text-emerald-400">{title}</h3>
+            <p className="mt-2 text-sm text-slate-400">{text}</p>
+          </Panel>
+        ))}
+      </section>
+
+      {/* Bottom CTA banner */}
+      <section className="flex flex-col gap-4 border border-emerald-500/30 bg-emerald-500/5 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+            <Box size={20} />
+          </span>
+          <div>
+            <p className="font-semibold text-emerald-400">Van idee naar server — in minuten.</p>
+            <p className="text-sm text-slate-400">Focus op je community. Laat de AI het zware werk doen.</p>
+          </div>
+        </div>
+        <Link
+          href={primaryHref}
+          className="flex shrink-0 items-center gap-2 bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
+        >
+          Begin nu gratis
+          <ArrowRight size={16} />
+        </Link>
+      </section>
+
+      {/* Stats row */}
+      <section className="grid gap-6 border-t border-base-700 pt-8 sm:grid-cols-4">
+        {STATS.map(({ icon: Icon, label, sub }) => (
+          <div key={label} className="flex items-center gap-3">
+            <Icon size={18} className="text-emerald-400" />
+            <div>
+              <p className="text-sm font-medium">{label}</p>
+              <p className="text-xs text-slate-500">{sub}</p>
+            </div>
+          </div>
+        ))}
       </section>
     </div>
   );
