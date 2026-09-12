@@ -35,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             account/login/register) apply their own. The homepage's
             full-bleed background must start immediately after the
             header with zero gap, which any padding here would create. */}
-        <main className="mx-auto max-w-[1400px]">
+        <main className="mx-auto max-w-[1700px]">
           {maintenance && !isAdmin ? (
             <div className="mx-auto max-w-md space-y-4 px-6 py-20 text-center">
               <Panel>

@@ -85,7 +85,7 @@ export function NavBar() {
 
   return (
     <header className="border-b border-base-700 bg-base-900">
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-4">
+      <div className="mx-auto flex max-w-[1700px] items-center justify-between gap-4 px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <span className="flex h-8 w-8 items-center justify-center rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
             <Box size={18} />

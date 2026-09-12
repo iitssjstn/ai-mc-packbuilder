@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Panel, Button, Input } from "@/components/ui";
-import { Plus, Trash2, Pencil, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, Search, Menu, X } from "lucide-react";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -41,6 +41,7 @@ export function BuilderClient() {
   const [plan, setPlan] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   async function loadConversations() {
@@ -196,11 +197,29 @@ export function BuilderClient() {
 
   return (
     <div className="flex h-[calc(100vh-73px)]">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Conversations sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-base-700 bg-base-900 md:flex">
+      <aside
+        className={`${
+          sidebarOpen ? "fixed inset-y-0 left-0 z-40 flex" : "hidden"
+        } w-64 shrink-0 flex-col border-r border-base-700 bg-base-900 md:relative md:z-0 md:flex`}
+      >
+        <div className="flex items-center justify-between p-3 md:hidden">
+          <span className="text-sm font-medium text-slate-300">Conversations</span>
+          <button onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <X size={16} className="text-slate-400" />
+          </button>
+        </div>
         <div className="p-3">
           <button
-            onClick={newChat}
+            onClick={() => {
+              newChat();
+              setSidebarOpen(false);
+            }}
             className="flex w-full items-center justify-center gap-1.5 rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
           >
             <Plus size={15} />
@@ -230,7 +249,13 @@ export function BuilderClient() {
                 c.id === conversationId ? "bg-emerald-500/10 text-emerald-400" : "text-slate-300 hover:bg-base-800"
               }`}
             >
-              <button onClick={() => openConversation(c.id)} className="min-w-0 flex-1 truncate text-left">
+              <button
+                onClick={() => {
+                  openConversation(c.id);
+                  setSidebarOpen(false);
+                }}
+                className="min-w-0 flex-1 truncate text-left"
+              >
                 {c.title}
                 <span className="ml-1.5 text-[10px] text-slate-500">{relativeTime(c.updatedAt)}</span>
               </button>
@@ -249,6 +274,13 @@ export function BuilderClient() {
 
       {/* Main chat area */}
       <div className="flex flex-1 flex-col gap-4 overflow-hidden px-6 py-6">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="flex w-fit items-center gap-1.5 text-sm text-slate-400 md:hidden"
+        >
+          <Menu size={16} />
+          Conversations
+        </button>
         <Panel className="flex flex-1 flex-col gap-3 overflow-y-auto">
           {messages.length === 0 && (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">

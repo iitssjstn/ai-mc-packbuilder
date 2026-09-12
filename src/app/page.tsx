@@ -54,13 +54,13 @@ export default function HomePage() {
     // Homepage-level background: one continuous layer behind hero +
     // features + CTA + USPs (not scoped to the hero alone). Breaks out
     // to full viewport width; the actual content stays in its own
-    // centered max-w-[1400px] wrapper on top, same as before.
+    // centered max-w-[1700px] wrapper on top, same as before.
     <div className="relative left-1/2 w-screen -translate-x-1/2">
       <div className="pointer-events-none absolute inset-0 z-0">
         <Image src="/images/hero-bg.png" alt="" fill priority className="object-cover object-top" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-[1400px] space-y-8 px-8 py-10 sm:px-12">
+      <div className="relative z-10 mx-auto max-w-[1700px] space-y-8 px-8 py-10 sm:px-12">
         {/* Hero — no card, no background of its own (that lives at the
             homepage level above), just content sitting on it. */}
         <section className="grid gap-3 py-2 lg:grid-cols-[11fr_9fr] lg:items-center">
