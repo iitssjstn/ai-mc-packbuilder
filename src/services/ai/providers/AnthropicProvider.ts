@@ -28,7 +28,8 @@ export class AnthropicProvider implements AiProvider {
       throw new ProviderExhaustedError(this.name, `Anthropic key exhausted (HTTP ${res.status})`);
     }
     if (!res.ok) {
-      throw new Error(`Anthropic request failed: HTTP ${res.status}`);
+      const body = await res.text().catch(() => "");
+      throw new Error(`Anthropic request failed: HTTP ${res.status} — ${body.slice(0, 300)}`);
     }
 
     const data = await res.json();
