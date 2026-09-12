@@ -116,7 +116,7 @@ model PluginVersion {
   checksum        String?
   createdAt       DateTime @default(now())
 
-  plugin Plugin @relation(fields: [pluginId], references: [id])
+  plugin Plugin @relation(fields: [pluginId], references: [id], onDelete: Cascade)
 
   @@unique([pluginId, version])
 }
@@ -128,8 +128,8 @@ model PluginDependency {
   optional      Boolean @default(false)
   reason        String?
 
-  plugin    Plugin @relation("PluginDependsOn", fields: [pluginId], references: [id])
-  dependsOn Plugin @relation("PluginRequiredBy", fields: [dependsOnId], references: [id])
+  plugin    Plugin @relation("PluginDependsOn", fields: [pluginId], references: [id], onDelete: Cascade)
+  dependsOn Plugin @relation("PluginRequiredBy", fields: [dependsOnId], references: [id], onDelete: Cascade)
 
   @@unique([pluginId, dependsOnId])
 }
@@ -140,8 +140,8 @@ model PluginConflict {
   pluginBId String
   reason    String?
 
-  pluginA Plugin @relation("PluginConflictA", fields: [pluginAId], references: [id])
-  pluginB Plugin @relation("PluginConflictB", fields: [pluginBId], references: [id])
+  pluginA Plugin @relation("PluginConflictA", fields: [pluginAId], references: [id], onDelete: Cascade)
+  pluginB Plugin @relation("PluginConflictB", fields: [pluginBId], references: [id], onDelete: Cascade)
 
   @@unique([pluginAId, pluginBId])
 }
