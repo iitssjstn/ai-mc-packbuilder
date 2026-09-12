@@ -38,6 +38,29 @@ export class AuthenticationService {
     return valid ? user : null;
   }
 
+  /** Lets a logged-in user change their own email/username/password.
+   * Always requires the current password, regardless of which fields
+   * are being changed — this is a self-service identity change, not an
+   * admin action, so it needs its own proof of authorization even
+   * though the request is already authenticated via the session cookie. */
+  async updateOwnProfile(
+    userId: string,
+    currentPassword: string,
+    changes: { email?: string; username?: string; newPassword?: string }
+  ) {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) throw new Error("Current password is incorrect");
+
+    const data: { email?: string; username?: string; passwordHash?: string } = {};
+    if (changes.email && changes.email !== user.email) data.email = changes.email;
+    if (changes.username && changes.username !== user.username) data.username = changes.username;
+    if (changes.newPassword) data.passwordHash = await bcrypt.hash(changes.newPassword, BCRYPT_ROUNDS);
+
+    if (Object.keys(data).length === 0) return user;
+    return prisma.user.update({ where: { id: userId }, data });
+  }
+
   issueToken(userId: string, role: JwtPayload["role"]): string {
     return jwt.sign({ sub: userId, role } as JwtPayload, env.JWT_SECRET, {
       expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"],

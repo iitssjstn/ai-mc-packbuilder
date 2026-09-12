@@ -3,12 +3,12 @@ import { Puzzle, Settings, Paintbrush, Box, Sparkles, CheckCircle2 } from "lucid
 
 const CHIPS = [
   { icon: Puzzle, label: "Plugins" },
-  { icon: Settings, label: "Configuratie" },
+  { icon: Settings, label: "Configuration" },
   { icon: Paintbrush, label: "Branding" },
-  { icon: Box, label: "Server pack" },
+  { icon: Box, label: "Server Pack" },
 ];
 
-const CHECKLIST = ["Klaar om te downloaden", "Geoptimaliseerd", "Compatibiliteitscheck", "Jouw wensen, onze AI"];
+const CHECKLIST = ["Ready to download", "Optimized", "Compatibility checked", "Your wishes, our AI"];
 
 /**
  * Chips/checklist/callout are absolutely positioned over the island
@@ -30,7 +30,7 @@ export function ServerIllustration() {
       {/* Island — large, centered, transparent background, no frame */}
       <Image
         src="/images/hero-island.png"
-        alt="Voxel-stijl eiland met huisje, waterval en portal — illustratie van een gegenereerd serverpack"
+        alt="Voxel-style island with a house, waterfall, and portal — illustration of a generated server pack"
         fill
         className="relative object-contain drop-shadow-2xl"
       />

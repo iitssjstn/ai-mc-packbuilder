@@ -27,7 +27,7 @@ export function RegisterClient({ redirectTo }: { redirectTo: string }) {
       router.push(redirectTo);
       router.refresh();
     } else {
-      setError(data.error ?? "Registreren mislukt");
+      setError(data.error ?? "Registration failed");
     }
   }
 
@@ -36,17 +36,17 @@ export function RegisterClient({ redirectTo }: { redirectTo: string }) {
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <Panel>
-        <h3 className="font-medium">Registreren</h3>
+        <h3 className="font-medium">Sign Up</h3>
         <form onSubmit={handleRegister} className="mt-3 space-y-2">
-          <Input type="email" name="email" placeholder="E-mail" required />
-          <Input type="text" name="username" placeholder="Gebruikersnaam" required />
-          <Input type="password" name="password" placeholder="Wachtwoord (min. 10 tekens)" required />
-          <Button type="submit">Registreren</Button>
+          <Input type="email" name="email" placeholder="Email" required />
+          <Input type="text" name="username" placeholder="Username" required />
+          <Input type="password" name="password" placeholder="Password (min. 10 characters)" required />
+          <Button type="submit">Sign Up</Button>
         </form>
         <p className="mt-4 text-sm text-slate-400">
-          Al een account?{" "}
+          Already have an account?{" "}
           <Link href={`/login?redirect=${encodeURIComponent(redirectTo)}`} className="text-emerald-400 hover:underline">
-            Inloggen
+            Log in
           </Link>
         </p>
       </Panel>

@@ -34,7 +34,7 @@ export function LoginClient({ redirectTo }: { redirectTo: string }) {
       router.push(redirectTo);
       router.refresh();
     } else {
-      setError(data.error ?? "Setup mislukt");
+      setError(data.error ?? "Setup failed");
     }
   }
 
@@ -52,11 +52,11 @@ export function LoginClient({ redirectTo }: { redirectTo: string }) {
       router.push(redirectTo);
       router.refresh();
     } else {
-      setError(data.error ?? "Inloggen mislukt");
+      setError(data.error ?? "Login failed");
     }
   }
 
-  if (setupComplete === null) return <p className="text-sm text-slate-500">Laden...</p>;
+  if (setupComplete === null) return <p className="text-sm text-slate-500">Loading...</p>;
 
   return (
     <div className="mx-auto max-w-md space-y-6 px-6 py-10">
@@ -64,31 +64,31 @@ export function LoginClient({ redirectTo }: { redirectTo: string }) {
 
       {!setupComplete && (
         <Panel className="border-emerald-500/40">
-          <h3 className="font-medium text-emerald-400">Eerste installatie</h3>
+          <h3 className="font-medium text-emerald-400">First-time setup</h3>
           <p className="mt-1 text-sm text-slate-400">
-            Er is nog geen owner-account. Maak deze eenmalig aan — daarna is dit formulier permanent uitgeschakeld.
+            No owner account exists yet. Create one now — this form is permanently disabled afterwards.
           </p>
           <form onSubmit={handleSetup} className="mt-4 space-y-2">
-            <Input type="email" name="email" placeholder="E-mail" required />
-            <Input type="text" name="username" placeholder="Gebruikersnaam" required />
-            <Input type="password" name="password" placeholder="Wachtwoord (min. 10 tekens)" required />
-            <Button type="submit">Owner-account aanmaken</Button>
+            <Input type="email" name="email" placeholder="Email" required />
+            <Input type="text" name="username" placeholder="Username" required />
+            <Input type="password" name="password" placeholder="Password (min. 10 characters)" required />
+            <Button type="submit">Create Owner Account</Button>
           </form>
         </Panel>
       )}
 
       {setupComplete && (
         <Panel>
-          <h3 className="font-medium">Inloggen</h3>
+          <h3 className="font-medium">Log In</h3>
           <form onSubmit={handleLogin} className="mt-3 space-y-2">
-            <Input type="email" name="email" placeholder="E-mail" required />
-            <Input type="password" name="password" placeholder="Wachtwoord" required />
-            <Button type="submit">Inloggen</Button>
+            <Input type="email" name="email" placeholder="Email" required />
+            <Input type="password" name="password" placeholder="Password" required />
+            <Button type="submit">Log In</Button>
           </form>
           <p className="mt-4 text-sm text-slate-400">
-            Nog geen account?{" "}
+            Don't have an account yet?{" "}
             <Link href={`/register?redirect=${encodeURIComponent(redirectTo)}`} className="text-emerald-400 hover:underline">
-              Registreer hier
+              Sign up here
             </Link>
           </p>
         </Panel>

@@ -116,7 +116,7 @@ export function AdminClient() {
     e.preventDefault();
     setVersionError(null);
     if (versionSoftware.length === 0) {
-      setVersionError("Kies minstens één server-software.");
+      setVersionError("Choose at least one server software.");
       return;
     }
     const form = new FormData(e.currentTarget);
@@ -137,12 +137,12 @@ export function AdminClient() {
       setVersionSoftware([]);
       load();
     } else {
-      setVersionError(data.error ?? "Kon versie niet toevoegen");
+      setVersionError(data.error ?? "Could not add version");
     }
   }
 
   if (forbidden) {
-    return <p className="text-sm text-slate-500">Je hebt geen toegang tot het adminpanel.</p>;
+    return <p className="text-sm text-slate-500">You do not have access to the admin panel.</p>;
   }
 
   async function saveProviderKeys(provider: string, keys: string) {
@@ -154,7 +154,7 @@ export function AdminClient() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setAiError(data.error ?? "Kon keys niet opslaan");
+      setAiError(data.error ?? "Could not save keys");
       return;
     }
     load();
@@ -170,7 +170,7 @@ export function AdminClient() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setAiError(data.error ?? "Kon volgorde niet opslaan");
+      setAiError(data.error ?? "Could not save order");
       return;
     }
     load();
@@ -178,10 +178,10 @@ export function AdminClient() {
 
   return (
     <div className="space-y-8 px-6 py-10">
-      <h2 className="text-base font-semibold">Admin panel</h2>
+      <h2 className="text-base font-semibold">Admin Panel</h2>
 
       <section className="space-y-2">
-        <h3 className="font-medium">Gebruikers</h3>
+        <h3 className="font-medium">Users</h3>
         {users.map((u) => (
           <Panel key={u.id} className="flex items-center justify-between">
             <div className="text-sm">
@@ -189,18 +189,18 @@ export function AdminClient() {
                 {u.email} <span className="text-slate-500">({u.username})</span>
               </p>
               <p className="font-mono text-xs text-slate-500">
-                {u.role} · {u.isBlocked ? "Geblokkeerd" : "Actief"}
+                {u.role} · {u.isBlocked ? "Blocked" : "Active"}
               </p>
             </div>
             <Button variant="secondary" onClick={() => toggleUser(u.id, !u.isBlocked)}>
-              {u.isBlocked ? "Deblokkeer" : "Blokkeer"}
+              {u.isBlocked ? "Unblock" : "Block"}
             </Button>
           </Panel>
         ))}
       </section>
 
       <section className="space-y-2">
-        <h3 className="font-medium">Plugin registry</h3>
+        <h3 className="font-medium">Plugin Registry</h3>
         {plugins.map((p) => (
           <Panel key={p.id}>
             <div className="flex items-center justify-between">
@@ -209,34 +209,34 @@ export function AdminClient() {
                   {p.name} <span className="font-mono text-xs text-slate-500">({p.slug})</span>
                 </p>
                 <ul className="mt-1 font-mono text-xs text-slate-500">
-                  {p.versions.length === 0 && <li>geen versies</li>}
+                  {p.versions.length === 0 && <li>no versions</li>}
                   {p.versions.map((v) => (
                     <li key={v.id}>
-                      {v.version} ({v.minecraftRange}) {v.downloadUrl ? "✓" : "⚠ geen download-URL"}
+                      {v.version} ({v.minecraftRange}) {v.downloadUrl ? "✓" : "⚠ no download URL"}
                     </li>
                   ))}
                 </ul>
               </div>
               <Button variant="secondary" onClick={() => togglePlugin(p.id, !p.isActive)}>
-                {p.isActive ? "Deactiveren" : "Activeren"}
+                {p.isActive ? "Deactivate" : "Activate"}
               </Button>
             </div>
           </Panel>
         ))}
 
         <Panel>
-          <h4 className="text-sm font-medium">Plugin toevoegen</h4>
+          <h4 className="text-sm font-medium">Add Plugin</h4>
           <form onSubmit={addPlugin} className="mt-3 flex flex-wrap gap-2">
-            <Input name="slug" placeholder="slug (bv. worldedit)" required className="flex-1 min-w-[140px]" />
-            <Input name="name" placeholder="Naam" required className="flex-1 min-w-[140px]" />
-            <Input name="description" placeholder="Beschrijving" required className="flex-1 min-w-[140px]" />
-            <Input name="officialUrl" type="url" placeholder="Website (optioneel)" className="flex-1 min-w-[140px]" />
-            <Button type="submit">Toevoegen</Button>
+            <Input name="slug" placeholder="slug (e.g. worldedit)" required className="flex-1 min-w-[140px]" />
+            <Input name="name" placeholder="Name" required className="flex-1 min-w-[140px]" />
+            <Input name="description" placeholder="Description" required className="flex-1 min-w-[140px]" />
+            <Input name="officialUrl" type="url" placeholder="Website (optional)" className="flex-1 min-w-[140px]" />
+            <Button type="submit">Add</Button>
           </form>
         </Panel>
 
         <Panel>
-          <h4 className="text-sm font-medium">Plugin-versie toevoegen (download-URL + checksum)</h4>
+          <h4 className="text-sm font-medium">Add Plugin Version (download URL + checksum)</h4>
           <form onSubmit={addVersion} className="mt-3 space-y-2 max-w-md">
             <select name="pluginId" required className="w-full border border-base-600 bg-base-950 px-3 py-2 text-sm">
               {plugins.map((p) => (
@@ -245,8 +245,8 @@ export function AdminClient() {
                 </option>
               ))}
             </select>
-            <Input name="version" placeholder="Versie (bv. 2.20.1)" required />
-            <Input name="minecraftRange" placeholder="Minecraft-range (bv. 1.21.x)" required />
+            <Input name="version" placeholder="Version (e.g. 2.20.1)" required />
+            <Input name="minecraftRange" placeholder="Minecraft range (e.g. 1.21.x)" required />
             <div className="flex gap-4 text-sm text-slate-400">
               {SOFTWARE_OPTIONS.map((s) => (
                 <label key={s} className="flex items-center gap-1">
@@ -263,12 +263,12 @@ export function AdminClient() {
                 </label>
               ))}
             </div>
-            <Input name="downloadUrl" type="url" placeholder="Download-URL (https://...)" required />
-            <Input name="checksum" placeholder="SHA-256 checksum (64 hex tekens)" required pattern="[a-fA-F0-9]{64}" />
-            <Button type="submit">Versie toevoegen</Button>
+            <Input name="downloadUrl" type="url" placeholder="Download URL (https://...)" required />
+            <Input name="checksum" placeholder="SHA-256 checksum (64 hex characters)" required pattern="[a-fA-F0-9]{64}" />
+            <Button type="submit">Add Version</Button>
             {versionError && <p className="text-sm text-red-400">{versionError}</p>}
             <p className="text-xs text-slate-500">
-              Alleen hosts uit de allowlist worden geaccepteerd bij het genereren van een pack (github.com,
+              Only hosts on the allowlist are accepted when generating a pack (github.com,
               hangar.papermc.io, cdn.modrinth.com, media.forgecdn.net, ...).
             </p>
           </form>
@@ -277,23 +277,23 @@ export function AdminClient() {
 
       {aiSettings && (
         <section className="space-y-2">
-          <h3 className="font-medium">AI-providers</h3>
+          <h3 className="font-medium">AI Providers</h3>
           <p className="text-xs text-slate-500">
-            Keys worden versleuteld opgeslagen in de database. Bij het opslaan zie je de waarde
-            hierna nooit meer terug in de UI — alleen het aantal keys en de laatste 4 tekens.
+            Keys are stored encrypted in the database. Once saved, the value is never shown
+            again in the UI — only the key count and the last 4 characters.
           </p>
 
           {aiError && <p className="text-sm text-red-400">{aiError}</p>}
 
           <Panel>
-            <h4 className="text-sm font-medium">Volgorde</h4>
+            <h4 className="text-sm font-medium">Order</h4>
             <p className="text-xs text-slate-500 mt-1">
-              Kommagescheiden, bv. <code className="font-mono">anthropic,openai,google</code>
+              Comma-separated, e.g. <code className="font-mono">anthropic,openai,google</code>
             </p>
             <div className="mt-2 flex gap-2">
               <Input value={orderInput} onChange={(e) => setOrderInput(e.target.value)} className="flex-1" />
               <Button variant="secondary" onClick={saveOrder}>
-                Opslaan
+                Save
               </Button>
             </div>
           </Panel>
@@ -310,7 +310,7 @@ export function AdminClient() {
       )}
 
       <section className="space-y-2">
-        <h3 className="font-medium">Audit log</h3>
+        <h3 className="font-medium">Audit Log</h3>
         <Panel>
           <ul className="font-mono text-xs text-slate-500 space-y-1 max-h-60 overflow-y-auto">
             {logs.map((l) => (
@@ -342,7 +342,7 @@ function ProviderKeyPanel({
         <h4 className="text-sm font-medium capitalize">{provider}</h4>
         <span className="font-mono text-xs text-slate-500">
           {info.count === 0
-            ? "geen keys"
+            ? "no keys"
             : `${info.count} key(s): ${info.lastFour.map((f) => `...${f}`).join(", ")}`}{" "}
           ({info.source === "database" ? "via UI" : "via env/secrets"})
         </span>
@@ -351,7 +351,7 @@ function ProviderKeyPanel({
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Nieuwe key(s), kommagescheiden — leeg laten om te wissen"
+          placeholder="New key(s), comma-separated — leave blank to clear"
           className="flex-1"
         />
         <Button
@@ -361,7 +361,7 @@ function ProviderKeyPanel({
             setValue("");
           }}
         >
-          Opslaan
+          Save
         </Button>
       </div>
     </Panel>

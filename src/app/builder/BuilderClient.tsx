@@ -34,14 +34,14 @@ export function BuilderClient() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessages((m) => [...m, { role: "assistant", content: `Fout: ${data.error ?? "onbekende fout"}` }]);
+        setMessages((m) => [...m, { role: "assistant", content: `Error: ${data.error ?? "unknown error"}` }]);
         return;
       }
       setConversationId(data.conversationId);
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
       if (data.plan) setPlan(data.plan);
     } catch {
-      setMessages((m) => [...m, { role: "assistant", content: "Kan geen verbinding maken met de server." }]);
+      setMessages((m) => [...m, { role: "assistant", content: "Could not connect to the server." }]);
     } finally {
       setBusy(false);
     }
@@ -60,7 +60,7 @@ export function BuilderClient() {
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
-        setStatus(`Kan pakket niet aanmaken: ${createData.error}`);
+        setStatus(`Could not create pack: ${createData.error}`);
         return;
       }
 
@@ -71,20 +71,20 @@ export function BuilderClient() {
         const logoRes = await fetch(`/api/packs/${createData.id}/logo`, { method: "POST", body: form });
         if (!logoRes.ok) {
           const err = await logoRes.json().catch(() => ({}));
-          setStatus(`Logo overgeslagen: ${err.error ?? "kon niet worden geüpload"}`);
+          setStatus(`Logo skipped: ${err.error ?? "could not be uploaded"}`);
         }
       }
 
-      setStatus("Serverpakket wordt gegenereerd...");
+      setStatus("Generating your server pack...");
       const genRes = await fetch(`/api/packs/${createData.id}/generate`, { method: "POST" });
       const genData = await genRes.json();
       if (!genRes.ok) {
-        setStatus(`Kan pakket niet genereren: ${genData.error}`);
+        setStatus(`Could not generate pack: ${genData.error}`);
         return;
       }
-      setStatus("Klaar! Bekijk je pack bij 'Mijn Serverpacks'.");
+      setStatus("Done! Check your pack under 'My Server Packs'.");
     } catch {
-      setStatus("Onverwachte fout tijdens het genereren.");
+      setStatus("Unexpected error during generation.");
     } finally {
       setBusy(false);
     }
@@ -95,7 +95,7 @@ export function BuilderClient() {
       <Panel className="min-h-[240px] flex flex-col gap-3">
         {messages.length === 0 && (
           <p className="text-sm text-slate-500">
-            Bijv: &quot;Ik wil een survival server voor 30 spelers, met claims, economy en homes...&quot;
+            e.g.: &quot;I want a survival server for 30 players, with claims, economy, and homes...&quot;
           </p>
         )}
         {messages.map((m, i) => (
@@ -116,12 +116,12 @@ export function BuilderClient() {
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Beschrijf je server..."
+          placeholder="Describe your server..."
           rows={3}
           className="flex-1 border border-base-600 bg-base-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500"
         />
         <Button type="submit" disabled={busy}>
-          Verstuur
+          Send
         </Button>
       </form>
 
@@ -133,13 +133,13 @@ export function BuilderClient() {
           </pre>
 
           <label className="mt-4 block text-sm text-slate-400">
-            Server-logo (optioneel, PNG, max 2MB)
+            Server logo (optional, PNG, max 2MB)
             <input ref={logoInputRef} type="file" accept="image/png" className="mt-1 block text-sm text-slate-300" />
           </label>
 
           <div className="mt-4 flex items-center gap-3">
             <Button onClick={generatePack} disabled={busy}>
-              Serverpakket maken
+              Create Server Pack
             </Button>
             {status && <span className="text-sm text-slate-400">{status}</span>}
           </div>

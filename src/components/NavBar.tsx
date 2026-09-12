@@ -15,7 +15,7 @@ interface Me {
 const BASE_LINKS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/builder", label: "AI Builder", icon: Sparkles },
-  { href: "/packs", label: "Mijn Serverpacks", icon: FolderOpen },
+  { href: "/packs", label: "My Server Packs", icon: FolderOpen },
 ];
 
 export function NavBar() {
@@ -35,7 +35,7 @@ export function NavBar() {
   // it's really a logout action). Logged out, the equivalent is "Inloggen".
   const links = [
     ...BASE_LINKS,
-    ...(me ? [] : [{ href: "/login", label: "Inloggen", icon: User }]),
+    ...(me ? [] : [{ href: "/login", label: "Log In", icon: User }]),
     ...(me && (me.role === "ADMIN" || me.role === "OWNER") ? [{ href: "/admin", label: "Admin", icon: Users }] : []),
   ];
 
@@ -58,7 +58,7 @@ export function NavBar() {
               AI Minecraft Server <span className="text-emerald-400">Pack</span> Builder
             </span>
             <span className="block text-xs leading-tight text-slate-500">
-              Minecraft Java Edition — beschrijf je server, de AI doet de rest.
+              Minecraft Java Edition — describe your server, the AI does the rest.
             </span>
           </span>
         </Link>
@@ -92,7 +92,7 @@ export function NavBar() {
                 className="flex items-center gap-1.5 border border-transparent px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
               >
                 <LogOut size={15} />
-                Uitloggen
+                Log Out
               </button>
             )}
           </nav>
@@ -102,7 +102,7 @@ export function NavBar() {
           href={me ? "/builder" : "/login"}
           className="flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
         >
-          Aan de slag
+          Get Started
           <ArrowRight size={15} />
         </Link>
       </div>

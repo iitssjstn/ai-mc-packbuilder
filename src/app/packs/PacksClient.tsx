@@ -34,24 +34,25 @@ export function PacksClient() {
     const res = await fetch(`/api/packs/${id}/generate`, { method: "POST" });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Genereren mislukt");
+      alert(data.error ?? "Generation failed");
     }
     setBusyId(null);
     load();
   }
 
   async function remove(id: string) {
+    if (!window.confirm("Permanently delete this server pack? This cannot be undone.")) return;
     await fetch(`/api/packs/${id}`, { method: "DELETE" });
     load();
   }
 
   return (
     <div className="space-y-4 px-6 py-10">
-      <h2 className="text-base font-semibold">Mijn Serverpacks</h2>
+      <h2 className="text-base font-semibold">My Server Packs</h2>
 
-      {loading && <p className="text-sm text-slate-500">Laden...</p>}
+      {loading && <p className="text-sm text-slate-500">Loading...</p>}
       {!loading && packs.length === 0 && (
-        <p className="text-sm text-slate-500">Nog geen serverpacks — maak er een via de AI Builder.</p>
+        <p className="text-sm text-slate-500">No server packs yet — create one using the AI Builder.</p>
       )}
 
       <div className="space-y-2">
@@ -85,11 +86,11 @@ export function PacksClient() {
               )}
               {(pack.status === "DRAFT" || pack.status === "FAILED") && (
                 <Button variant="secondary" onClick={() => regenerate(pack.id)} disabled={busyId === pack.id}>
-                  {busyId === pack.id ? "Bezig..." : "Genereer"}
+                  {busyId === pack.id ? "Working..." : "Generate"}
                 </Button>
               )}
               <Button variant="secondary" onClick={() => remove(pack.id)}>
-                Verwijderen
+                Delete
               </Button>
             </div>
           </Panel>

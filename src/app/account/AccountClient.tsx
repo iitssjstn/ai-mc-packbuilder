@@ -40,14 +40,14 @@ export function AccountClient() {
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       setMe(data);
-      setSuccess("Gegevens bijgewerkt.");
+      setSuccess("Your details have been updated.");
       e.currentTarget.reset();
     } else {
-      setError(data.error ?? "Bijwerken mislukt");
+      setError(data.error ?? "Update failed");
     }
   }
 
-  if (!me) return <p className="text-sm text-slate-500">Laden...</p>;
+  if (!me) return <p className="text-sm text-slate-500">Loading...</p>;
 
   return (
     <div className="mx-auto max-w-md space-y-6 px-6 py-10">
@@ -55,26 +55,26 @@ export function AccountClient() {
 
       <Panel>
         <p className="text-sm text-slate-400">
-          Ingelogd als <span className="text-slate-200">{me.username}</span> ({me.email})
+          Logged in as <span className="text-slate-200">{me.username}</span> ({me.email})
         </p>
       </Panel>
 
       <Panel>
-        <h3 className="font-medium">Gegevens wijzigen</h3>
+        <h3 className="font-medium">Update Your Details</h3>
         <p className="mt-1 text-xs text-slate-500">
-          Laat een veld leeg om dat niet te wijzigen. Je huidige wachtwoord is altijd verplicht om wijzigingen te bevestigen.
+          Leave a field blank to keep it unchanged. Your current password is always required to confirm changes.
         </p>
 
         {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         {success && <p className="mt-3 text-sm text-emerald-400">{success}</p>}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-2">
-          <Input type="email" name="email" placeholder={`Nieuwe e-mail (nu: ${me.email})`} />
-          <Input type="text" name="username" placeholder={`Nieuwe gebruikersnaam (nu: ${me.username})`} />
-          <Input type="password" name="newPassword" placeholder="Nieuw wachtwoord (min. 10 tekens, optioneel)" />
+          <Input type="email" name="email" placeholder={`New email (current: ${me.email})`} />
+          <Input type="text" name="username" placeholder={`New username (current: ${me.username})`} />
+          <Input type="password" name="newPassword" placeholder="New password (min. 10 characters, optional)" />
           <hr className="border-base-700" />
-          <Input type="password" name="currentPassword" placeholder="Huidig wachtwoord (verplicht)" required />
-          <Button type="submit">Opslaan</Button>
+          <Input type="password" name="currentPassword" placeholder="Current password (required)" required />
+          <Button type="submit">Save</Button>
         </form>
       </Panel>
     </div>
