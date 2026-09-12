@@ -17,6 +17,7 @@ interface PackDetail {
   errorMessage: string | null;
   planJson: string;
   fileSizeBytes: number | null;
+  conversationId: string | null;
 }
 
 export function PackDetailClient({ id }: { id: string }) {
@@ -151,6 +152,11 @@ export function PackDetailClient({ id }: { id: string }) {
           <a href={`/api/packs/${pack.id}/download`}>
             <Button>Download Pack</Button>
           </a>
+        )}
+        {pack.conversationId && (
+          <Link href={`/builder?conversation=${pack.conversationId}`}>
+            <Button variant="secondary">Continue in AI Builder</Button>
+          </Link>
         )}
         <Button variant="secondary" onClick={duplicate}>
           Duplicate

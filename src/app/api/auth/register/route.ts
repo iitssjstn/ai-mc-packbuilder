@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { rateLimit } from "@/lib/rateLimit";
 import { Role } from "@/lib/enums";
+import { creditService } from "@/services/CreditService";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
 
   const user = await authenticationService.register(email, username, password);
   await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
+  await creditService.grantSignupCredits(user.id);
   const token = authenticationService.issueToken(user.id, user.role as Role);
   setSessionCookie(token);
 

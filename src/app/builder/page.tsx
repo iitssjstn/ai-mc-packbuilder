@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getSessionUser } from "@/lib/session";
 import { BuilderClient } from "./BuilderClient";
 
@@ -7,5 +8,11 @@ import { BuilderClient } from "./BuilderClient";
 // and only fail once they try to send a message.
 export default function BuilderPage() {
   if (!getSessionUser()) redirect("/login?redirect=/builder");
-  return <BuilderClient />;
+  return (
+    // BuilderClient reads ?conversation=<id> via useSearchParams, which
+    // Next.js requires a Suspense boundary for even on already-dynamic pages.
+    <Suspense fallback={null}>
+      <BuilderClient />
+    </Suspense>
+  );
 }

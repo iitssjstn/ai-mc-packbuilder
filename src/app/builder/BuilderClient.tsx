@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Panel, Button, Input } from "@/components/ui";
 import { Plus, Trash2, Pencil, Search, Menu, X } from "lucide-react";
 
@@ -60,6 +61,16 @@ export function BuilderClient() {
   useEffect(() => {
     loadConversations();
   }, []);
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    // Supports "Continue in AI Builder" from a server pack's detail
+    // page (?conversation=<id>) — opens straight into that conversation
+    // instead of a blank Builder.
+    const fromQuery = searchParams.get("conversation");
+    if (fromQuery) openConversation(fromQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   async function openConversation(id: string) {
     setBusy(true);
@@ -137,7 +148,7 @@ export function BuilderClient() {
       const createRes = await fetch("/api/packs", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(plan),
+        body: JSON.stringify({ ...plan, conversationId }),
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
@@ -185,7 +196,7 @@ export function BuilderClient() {
       const res = await fetch("/api/packs", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(plan),
+        body: JSON.stringify({ ...plan, conversationId }),
       });
       const data = await res.json();
       if (!res.ok) {

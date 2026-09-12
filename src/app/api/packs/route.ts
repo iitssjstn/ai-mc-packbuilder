@@ -39,7 +39,13 @@ export async function POST(req: NextRequest) {
   const session = requireAuth();
   if (!isSessionUser(session)) return session;
 
-  const parsed = serverPlanSchema.safeParse(await req.json().catch(() => null));
+  const rawBody = await req.json().catch(() => null);
+  // conversationId travels alongside the plan fields, not part of the
+  // plan schema itself — serverPlanSchema silently ignores unknown keys
+  // (Zod's default "strip" mode), so pulling it off the raw body first
+  // is the only way to actually see it.
+  const conversationId = typeof rawBody?.conversationId === "string" ? rawBody.conversationId : undefined;
+  const parsed = serverPlanSchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid server plan", details: parsed.error.issues }, { status: 400 });
   }
@@ -59,6 +65,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unknown Minecraft version or server software" }, { status: 400 });
   }
 
+  // If a conversationId was supplied, verify it actually belongs to this
+  // user before trusting it — otherwise a user could link a pack to
+  // someone else's conversation by guessing/passing its ID.
+  let verifiedConversationId: string | undefined;
+  if (conversationId) {
+    const conversation = await prisma.aiConversation.findFirst({ where: { id: conversationId, userId } });
+    if (conversation) verifiedConversationId = conversation.id;
+  }
+
   try {
     brandingService.validateLinks(parsed.data.branding);
   } catch (err) {
@@ -68,6 +83,7 @@ export async function POST(req: NextRequest) {
   const pack = await prisma.serverPack.create({
     data: {
       userId,
+      conversationId: verifiedConversationId,
       name: parsed.data.server.name,
       minecraftVersionId: mcVersion.id,
       serverSoftwareId: software.id,

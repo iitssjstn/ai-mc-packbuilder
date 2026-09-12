@@ -35,6 +35,8 @@ model User {
   packs         ServerPack[]
   auditLogs     AuditLog[]
   notifications Notification[]
+  creditBalance CreditBalance?
+  creditTransactions CreditTransaction[]
 }
 
 // ---------- Minecraft versions & server software ----------
@@ -216,6 +218,7 @@ model AiConversation {
 
   user     User        @relation(fields: [userId], references: [id])
   messages AiMessage[]
+  packs    ServerPack[]
 }
 
 model AiMessage {
@@ -234,6 +237,7 @@ model AiMessage {
 model ServerPack {
   id                 String   @id @default(uuid())
   userId             String
+  conversationId     String?  // which AI Builder conversation produced this pack, if any — powers "Continue in AI Builder"
   name               String
   version            Int      @default(1)
   minecraftVersionId String
@@ -244,10 +248,12 @@ model ServerPack {
   filePath           String?  // path in storage adapter, not publicly guessable
   fileSizeBytes      Int?
   errorMessage       String?
+  creditsCost        Int      @default(0) // credits charged for the most recent generation attempt — see CreditTransaction
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   user             User             @relation(fields: [userId], references: [id])
+  conversation     AiConversation?  @relation(fields: [conversationId], references: [id])
   minecraftVersion MinecraftVersion @relation(fields: [minecraftVersionId], references: [id])
   serverSoftware   ServerSoftware   @relation(fields: [serverSoftwareId], references: [id])
   plugins          PackPlugin[]
@@ -346,4 +352,42 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+// ---------- Credits / future billing ----------
+// No payment provider is wired up yet — this is architecture prep per
+// spec. Free-tier usage is enforced through these same tables (a
+// generation is charged 1 credit, refunded on failure) so the
+// server-side enforcement path already exists before any real money
+// is involved. See src/services/CreditService.ts.
+
+model CreditBalance {
+  userId    String   @id
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model CreditTransaction {
+  id                  String   @id @default(uuid())
+  userId              String
+  amount              Int      // positive = credited, negative = charged
+  type                String   // "free_grant" | "generation_charge" | "refund" | "purchase"
+  status              String   @default("completed") // "pending" | "completed" | "failed" | "refunded"
+  relatedPackId       String?
+  paymentProviderRef  String?  // e.g. a Stripe payment intent ID, once a provider exists
+  createdAt           DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---------- Legal content (editable from Admin, no redeploy) ----------
+
+model LegalDocument {
+  type          String    @id // "terms" | "privacy"
+  draftContent  String    // Markdown, rendered as plain text (no HTML/script execution)
+  publishedContent String?
+  publishedAt   DateTime?
+  updatedAt     DateTime  @updatedAt
 }

@@ -7,6 +7,7 @@ import { packGeneratorService, PlanValidationError } from "@/services/PackGenera
 import { rateLimit } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
 import { notify } from "@/lib/notifications";
+import { creditService } from "@/services/CreditService";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -54,17 +55,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "GENERATING", errorMessage: null, generationStep: null } });
 
+  // ADMIN/OWNER operate the platform rather than consume it — no free-
+  // tier limit applies to them. Regular users are charged 1 credit per
+  // attempt, refunded automatically if generation fails. This is the
+  // actual enforcement point for future paid generations too: nothing
+  // about "am I allowed to generate" is decided on the frontend.
+  const isExemptFromCredits = session.role === "ADMIN" || session.role === "OWNER";
+  if (!isExemptFromCredits) {
+    try {
+      await creditService.chargeForGeneration(session.id, pack.id);
+    } catch (err) {
+      await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "FAILED", errorMessage: (err as Error).message } });
+      return NextResponse.json({ error: (err as Error).message }, { status: 402 });
+    }
+  }
+
   try {
     const result = await packGeneratorService.generate(pack.id, parsed.data);
     await prisma.serverPack.update({
       where: { id: pack.id },
-      data: { status: "READY", filePath: result.filePath, fileSizeBytes: result.fileSizeBytes, generationStep: null },
+      data: { status: "READY", filePath: result.filePath, fileSizeBytes: result.fileSizeBytes, generationStep: null, creditsCost: isExemptFromCredits ? 0 : 1 },
     });
     await notify(session.id, "pack_ready", `"${pack.name}" is ready to download.`);
     return NextResponse.json({ id: pack.id, status: "READY" });
   } catch (err) {
     const message = err instanceof PlanValidationError ? err.issues.join(" | ") : "Pack generation failed";
     logger.error({ packId: pack.id, err }, "Pack generation failed");
+    if (!isExemptFromCredits) await creditService.refundGeneration(session.id, pack.id);
     await prisma.serverPack.update({ where: { id: pack.id }, data: { status: "FAILED", errorMessage: message, generationStep: null } });
     await notify(session.id, "pack_failed", `"${pack.name}" failed to generate: ${message}`);
     return NextResponse.json({ error: message }, { status: 422 });

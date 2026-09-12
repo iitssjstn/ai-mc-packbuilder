@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Package, Puzzle, Activity, ScrollText, Settings, ArrowLeft, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Package, Puzzle, Activity, ScrollText, Settings, ArrowLeft, User, LogOut, FileText } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin/ai-providers", label: "AI Providers", icon: Package },
   { href: "/admin/health", label: "System Health", icon: Activity },
   { href: "/admin/audit", label: "Audit Logs", icon: ScrollText },
+  { href: "/admin/legal", label: "Legal / Content", icon: FileText },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
