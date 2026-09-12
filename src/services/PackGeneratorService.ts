@@ -170,6 +170,39 @@ export class PackGeneratorService {
         );
       }
 
+      // Write per-plugin config overrides the user actually asked for
+      // (e.g. "3 homes for normal, 10 for VIP", "start with 500 money").
+      // Only keys present in that plugin's admin-VERIFIED configSchema
+      // are ever written — an override for a key that isn't verified
+      // (or isn't in the schema at all) is silently dropped here, not
+      // written blindly into a real config file.
+      for (const slug of validated.pluginSlugs) {
+        const overridesForPlugin = plan.configOverrides[slug];
+        if (!overridesForPlugin || Object.keys(overridesForPlugin).length === 0) continue;
+
+        const pluginRow = pluginRecords.find((p) => p?.slug === slug);
+        if (!pluginRow?.configSchema || !pluginRow.configSchemaVerified) continue;
+
+        const schema = JSON.parse(pluginRow.configSchema) as { properties?: Record<string, unknown> };
+        const allowedKeys = new Set(Object.keys(schema.properties ?? {}));
+        const filtered: Record<string, string | number | boolean> = {};
+        for (const [key, value] of Object.entries(overridesForPlugin)) {
+          if (allowedKeys.has(key)) filtered[key] = value;
+        }
+
+        const rendered = configurationService.renderConfigOverrides(filtered);
+        if (!rendered) continue;
+
+        const folderName = pluginRow.configFolderName ?? pluginRow.name;
+        const relativePath = path.join("plugins", folderName, "config.yml");
+        await this.writeFile(tmpDir, relativePath, rendered.content);
+        await prisma.packConfig.upsert({
+          where: { packId_fileName: { packId, fileName: relativePath } },
+          update: { content: rendered.content },
+          create: { packId, fileName: relativePath, content: rendered.content },
+        });
+      }
+
       const zipPath = path.join(this.storageRoot, `${packId}.zip`);
       await setStep("validating");
       const fileSizeBytes = await this.zipDirectory(tmpDir, zipPath);

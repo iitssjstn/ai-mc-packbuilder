@@ -20,6 +20,8 @@ interface Plugin {
   lastVerifiedAt: string | null;
   isActive: boolean;
   versions: PluginVersion[];
+  configSchema: string | null;
+  configSchemaVerified: boolean;
 }
 
 const SOFTWARE_OPTIONS = ["PAPER", "PURPUR", "VANILLA"] as const;
@@ -69,6 +71,34 @@ export function PluginsClient() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       alert(data.error ?? "Could not delete plugin");
+    }
+    load();
+  }
+
+  const [discoverBusy, setDiscoverBusy] = useState<string | null>(null);
+
+  async function discoverConfig(id: string) {
+    setDiscoverBusy(id);
+    const res = await fetch(`/api/admin/plugins/${id}/discover-config`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      alert(
+        data.sourceAvailable
+          ? `Found ${data.found} config key(s) from real documentation. Review and verify before it's used in generation.`
+          : "No documentation found on Modrinth to extract config keys from."
+      );
+      load();
+    } else {
+      alert(data.error ?? "Discovery failed");
+    }
+    setDiscoverBusy(null);
+  }
+
+  async function verifyConfig(id: string) {
+    const res = await fetch(`/api/admin/plugins/${id}/verify-config`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Could not verify config schema");
     }
     load();
   }
@@ -223,6 +253,13 @@ export function PluginsClient() {
                   ? "no versions"
                   : `${p.versions.length} version(s) — latest ${p.versions[p.versions.length - 1].downloadUrl ? "✓" : "⚠"}`}
               </p>
+              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                {(() => {
+                  const count = p.configSchema ? Object.keys(JSON.parse(p.configSchema).properties ?? {}).length : 0;
+                  if (count === 0) return "config keys: none discovered";
+                  return `config keys: ${count} ${p.configSchemaVerified ? "(verified ✓)" : "(unverified ⚠)"}`;
+                })()}
+              </p>
             </div>
             <div className="mt-2 flex gap-1">
               <button
@@ -243,6 +280,23 @@ export function PluginsClient() {
               >
                 Delete
               </button>
+            </div>
+            <div className="mt-1 flex gap-1">
+              <button
+                onClick={() => discoverConfig(p.id)}
+                disabled={discoverBusy === p.id}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
+              >
+                {discoverBusy === p.id ? "Discovering..." : "Discover Config"}
+              </button>
+              {p.configSchema && !p.configSchemaVerified && (
+                <button
+                  onClick={() => verifyConfig(p.id)}
+                  className="flex-1 rounded-md border border-emerald-500/40 px-1.5 py-1 text-[10px] text-emerald-400 transition-colors hover:bg-emerald-500/10"
+                >
+                  Verify Config
+                </button>
+              )}
             </div>
           </Panel>
         ))}

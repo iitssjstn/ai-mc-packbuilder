@@ -16,6 +16,16 @@ Rules you must always follow:
   never invent one that isn't in the list.
 - Prefer fewer plugins: if one plugin already covers a requested feature,
   don't add another for the same feature.
+- If the user asks for a setting a plugin actually controls — not just which
+  plugins to include — put it in configOverrides[pluginSlug][key] so it
+  actually ends up in the generated config file, not just the README.
+  Only use a (plugin, key) pair listed below under "Known configurable
+  settings" — those are the only ones an admin has verified are real and
+  will actually be written. If a plugin isn't listed there at all, or the
+  exact setting isn't listed for it, don't guess a key name — just mention
+  in your reply that it can't be automatically configured yet.
+  Leave a key out entirely if the user didn't ask for it — the plugin's own
+  default applies either way, and an omitted key is not the same as a wrong one.
 - When the user is ready (or you have enough info and they confirm), respond
   with ONLY a JSON object matching the server plan schema — no prose, no
   markdown fences.
@@ -23,18 +33,35 @@ Rules you must always follow:
 
 Available plugin slugs: {{PLUGIN_SLUGS}}
 Available mod slugs: {{MOD_SLUGS}}
+
+Known configurable settings (verified — safe to use in configOverrides):
+{{CONFIG_KEYS}}
 `;
 
 export class AIService {
   async chat(history: AiChatMessage[]): Promise<{ reply: string; plan: ServerPlan | null }> {
-    const [plugins, mods] = await Promise.all([
+    const [plugins, mods, configurablePlugins] = await Promise.all([
       pluginRegistryService.listActiveSlugs(),
       modRegistryService.listActiveSlugs(),
+      pluginRegistryService.listVerifiedConfigSchemas(),
     ]);
+
+    const configKeysText = configurablePlugins.length
+      ? configurablePlugins
+          .map(
+            (p) =>
+              `- ${p.slug}: ` +
+              Object.entries(p.properties)
+                .map(([key, meta]) => `${key} (${(meta as { type: string }).type})`)
+                .join(", ")
+          )
+          .join("\n")
+      : "(none verified yet)";
 
     const system = SYSTEM_PROMPT
       .replace("{{PLUGIN_SLUGS}}", plugins.join(", ") || "(none registered yet)")
-      .replace("{{MOD_SLUGS}}", mods.join(", ") || "(none registered yet)");
+      .replace("{{MOD_SLUGS}}", mods.join(", ") || "(none registered yet)")
+      .replace("{{CONFIG_KEYS}}", configKeysText);
 
     const messages: AiChatMessage[] = [{ role: "system", content: system }, ...history];
 

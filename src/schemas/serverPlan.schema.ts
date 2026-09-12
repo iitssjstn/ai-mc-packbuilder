@@ -59,7 +59,13 @@ export const serverPlanSchema = z.object({
   // there; CompatibilityService rejects anything not found.
   requestedPluginSlugs: z.array(z.string().min(1)).max(100).default([]),
   requestedModSlugs: z.array(z.string().min(1)).max(100).default([]),
-  configOverrides: z.record(z.string(), z.unknown()).default({}),
+  // General shape: plugin slug -> config key -> value. Only keys that
+  // exist in that plugin's admin-verified configSchema are ever actually
+  // written into a real config file — PackGeneratorService filters this
+  // against the registry at generation time, so this schema only
+  // bounds the *type* of what the AI can propose, not which specific
+  // keys are trusted.
+  configOverrides: z.record(z.string(), z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))).default({}),
   branding: brandingSchema,
 });
 

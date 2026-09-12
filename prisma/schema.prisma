@@ -94,7 +94,9 @@ model Plugin {
   license          String?
   isActive         Boolean   @default(true)
   lastVerifiedAt   DateTime?
-  configSchema     String?   // JSON-encoded JSON Schema describing configurable options
+  configSchema     String?   // JSON-encoded: { properties: { "<key>": { type, description } } } — discovered by AI from real docs, must be admin-verified before use
+  configSchemaVerified Boolean @default(false) // an admin must approve a discovered schema before generation will ever use it
+  configFolderName String?   // actual runtime plugins/<folder> name, if different from `name` (e.g. EssentialsX -> "Essentials")
 
   versions      PluginVersion[]
   dependsOn     PluginDependency[] @relation("PluginDependsOn")

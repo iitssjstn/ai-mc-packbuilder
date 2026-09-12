@@ -42,16 +42,42 @@ export class ConfigurationService {
   }
 
   /**
-   * Applies simple, whitelisted config overrides the user asked for in
-   * plain language (e.g. "normal players get 3 homes, VIP gets 10") onto a
-   * specific plugin's YAML config. Only known keys per plugin are ever
-   * touched — arbitrary override keys are dropped, not written through.
+   * Renders a config.yml from override key-value pairs that have
+   * already been filtered against a plugin's admin-verified
+   * configSchema by the caller — this method itself does no
+   * verification, it only turns a flat/dotted key map into YAML.
+   * Dotted keys ("sethome-multiple.default") become nested blocks.
    */
-  applyHomesOverride(overrides: ServerPlan["configOverrides"]): { defaultHomes: number; vipHomes: number } {
-    const homes = (overrides.homes as any) ?? {};
-    const defaultHomes = Number.isFinite(homes.default) ? Math.max(0, Math.min(50, homes.default)) : 3;
-    const vipHomes = Number.isFinite(homes.vip) ? Math.max(0, Math.min(50, homes.vip)) : 10;
-    return { defaultHomes, vipHomes };
+  renderConfigOverrides(overrides: Record<string, string | number | boolean>): RenderedConfig | null {
+    const entries = Object.entries(overrides);
+    if (entries.length === 0) return null;
+
+    const tree: Record<string, unknown> = {};
+    for (const [key, value] of entries) {
+      const parts = key.split(".");
+      let node = tree;
+      for (let i = 0; i < parts.length - 1; i++) {
+        node[parts[i]] = node[parts[i]] ?? {};
+        node = node[parts[i]] as Record<string, unknown>;
+      }
+      node[parts[parts.length - 1]] = value;
+    }
+
+    const renderNode = (node: Record<string, unknown>, indent: number): string[] => {
+      const lines: string[] = [];
+      for (const [key, value] of Object.entries(node)) {
+        const prefix = "  ".repeat(indent);
+        if (typeof value === "object" && value !== null) {
+          lines.push(`${prefix}${key}:`);
+          lines.push(...renderNode(value as Record<string, unknown>, indent + 1));
+        } else {
+          lines.push(`${prefix}${key}: ${value}`);
+        }
+      }
+      return lines;
+    };
+
+    return { fileName: "config.yml", content: renderNode(tree, 0).join("\n") + "\n" };
   }
 }
 

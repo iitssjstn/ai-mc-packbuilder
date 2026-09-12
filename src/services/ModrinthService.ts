@@ -145,6 +145,18 @@ export class ModrinthService {
 
     return { name, status: "imported" as const, slug: hit.slug, title: hit.title, versionAdded };
   }
+
+  /** Fetches a project's full description/body — often contains config
+   * examples — for use as real source text in config-key discovery.
+   * Returns null rather than guessing when there's nothing to extract from. */
+  async getProjectBody(idOrSlug: string): Promise<string | null> {
+    try {
+      const project = await modrinthFetch<{ body?: string }>(`/project/${idOrSlug}`);
+      return project.body ?? null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const modrinthService = new ModrinthService();

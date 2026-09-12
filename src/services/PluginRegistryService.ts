@@ -10,6 +10,23 @@ export class PluginRegistryService {
     return plugins.map((p) => p.slug);
   }
 
+  /** Only plugins with an admin-verified configSchema — this is what the
+   * AI is told it may safely propose configOverrides for. */
+  async listVerifiedConfigSchemas(): Promise<{ slug: string; properties: Record<string, unknown> }[]> {
+    const plugins = await prisma.plugin.findMany({
+      where: { isActive: true, configSchemaVerified: true, configSchema: { not: null } },
+      select: { slug: true, configSchema: true },
+    });
+    return plugins.flatMap((p) => {
+      try {
+        const parsed = JSON.parse(p.configSchema!);
+        return [{ slug: p.slug, properties: parsed.properties ?? {} }];
+      } catch {
+        return [];
+      }
+    });
+  }
+
   async getBySlug(slug: string) {
     return prisma.plugin.findUnique({
       where: { slug },
