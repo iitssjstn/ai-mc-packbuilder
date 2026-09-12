@@ -47,7 +47,12 @@ async function modrinthFetch<T>(path: string): Promise<T> {
 export class ModrinthService {
   async search(query: string): Promise<{ projectId: string; slug: string; title: string; description: string; author: string }[]> {
     const data = await modrinthFetch<{ hits: ModrinthSearchHit[] }>(
-      `/search?query=${encodeURIComponent(query)}&facets=${encodeURIComponent('[["project_type:plugin"]]')}&limit=10`
+      // project_type only allows mod/modpack/resourcepack/shader as a
+      // value — "plugin" isn't one of them. all_project_types is the
+      // field that actually includes "plugin" (Modrinth's docs list it
+      // explicitly under that field, not project_type). Using the wrong
+      // field here meant every search silently returned zero hits.
+      `/search?query=${encodeURIComponent(query)}&facets=${encodeURIComponent('[["all_project_types:plugin"]]')}&limit=10`
     );
     return data.hits.map((h) => ({
       projectId: h.project_id,
