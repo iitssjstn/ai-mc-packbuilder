@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { AdminShell } from "@/components/AdminShell";
-import { AdminOverviewClient } from "./AdminOverviewClient";
+import { AuditClient } from "./AuditClient";
 
-export default function AdminPage() {
+export default function AdminAuditPage() {
   const user = getSessionUser();
-  if (!user) redirect("/login?redirect=/admin");
+  if (!user) redirect("/login?redirect=/admin/audit");
   if (user.role !== "ADMIN" && user.role !== "OWNER") redirect("/");
   return (
     <AdminShell>
-      <AdminOverviewClient />
+      <AuditClient />
     </AdminShell>
   );
 }

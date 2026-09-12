@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { AdminShell } from "@/components/AdminShell";
-import { AdminOverviewClient } from "./AdminOverviewClient";
+import { SettingsClient } from "./SettingsClient";
 
-export default function AdminPage() {
+export default function AdminSettingsPage() {
   const user = getSessionUser();
-  if (!user) redirect("/login?redirect=/admin");
+  if (!user) redirect("/login?redirect=/admin/settings");
   if (user.role !== "ADMIN" && user.role !== "OWNER") redirect("/");
   return (
     <AdminShell>
-      <AdminOverviewClient />
+      <SettingsClient />
     </AdminShell>
   );
 }

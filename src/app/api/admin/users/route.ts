@@ -13,6 +13,7 @@ export async function GET() {
   if (!isSessionUser(session)) return session;
 
   const users = await prisma.user.findMany({
+    orderBy: { createdAt: "desc" },
     select: { id: true, email: true, username: true, role: true, isBlocked: true, packLimit: true, createdAt: true },
   });
   return NextResponse.json(users);
