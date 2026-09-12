@@ -1,0 +1,13 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth, requireRole, isSessionUser } from "@/lib/session";
+
+export async function GET() {
+  const session = requireAuth();
+  if (!isSessionUser(session)) return session;
+  const roleError = requireRole(session, "OWNER");
+  if (roleError) return roleError;
+
+  const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
+  return NextResponse.json(logs);
+}
