@@ -34,7 +34,9 @@ COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-RUN mkdir -p /app/data && chown -R node:node /app/data
-USER node
+# Runs as root. A bind-mounted volume at /app/data is created by Docker
+# on the host (owned by root there) — a non-root USER here would lack
+# write permission to it regardless of any chown baked into this image
+# layer, since the mount replaces this path entirely at container start.
 EXPOSE 3000
 ENTRYPOINT ["docker-entrypoint.sh"]
