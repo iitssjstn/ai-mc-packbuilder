@@ -117,7 +117,7 @@ async function main() {
           pluginId: plugin.id,
           version: v.version,
           minecraftRange: v.minecraftRange,
-          compatibleSoftware: v.software,
+          compatibleSoftware: v.software.join(","),
           // PLACEHOLDER — admin must set a real, verified download URL + checksum.
           downloadUrl: "",
           checksum: null,

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
     "seed": "tsx src/registry/seed.ts",
     "test": "vitest run"
   },

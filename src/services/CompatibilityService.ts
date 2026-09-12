@@ -1,4 +1,4 @@
-import { SoftwareType } from "@prisma/client";
+import { SoftwareType } from "@/lib/enums";
 import { pluginRegistryService } from "./PluginRegistryService";
 import { modRegistryService } from "./ModRegistryService";
 

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-describe("readSecret / resolveDatabaseUrl", () => {
+describe("readSecret", () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "secrets-test-"));
   const originalEnv = { ...process.env };
 
@@ -45,29 +45,46 @@ describe("readSecret / resolveDatabaseUrl", () => {
     const { readSecret } = await import("./secrets");
     expect(() => readSecret("SOME_SECRET")).toThrow(/Could not read secret file/);
   });
+});
 
-  it("resolveDatabaseUrl returns DATABASE_URL directly when set", async () => {
-    process.env.DATABASE_URL = "postgresql://direct/url";
-    const { resolveDatabaseUrl } = await import("./secrets");
-    expect(resolveDatabaseUrl()).toBe("postgresql://direct/url");
+describe("getOrCreatePersistedSecret", () => {
+  const originalEnv = { ...process.env };
+  let dataDir: string;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+    dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "persisted-secret-test-"));
   });
 
-  it("resolveDatabaseUrl builds a URL from parts when only DB_PASSWORD is set", async () => {
-    delete process.env.DATABASE_URL;
-    process.env.DB_PASSWORD = "p@ss/w0rd";
-    process.env.DB_HOST = "db-host";
-    process.env.DB_USER = "someuser";
-    process.env.DB_NAME = "somedb";
-    const { resolveDatabaseUrl } = await import("./secrets");
-    expect(resolveDatabaseUrl()).toBe(
-      `postgresql://someuser:${encodeURIComponent("p@ss/w0rd")}@db-host:5432/somedb`
-    );
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    fs.rmSync(dataDir, { recursive: true, force: true });
   });
 
-  it("resolveDatabaseUrl returns undefined when nothing is configured", async () => {
-    delete process.env.DATABASE_URL;
-    delete process.env.DB_PASSWORD;
-    const { resolveDatabaseUrl } = await import("./secrets");
-    expect(resolveDatabaseUrl()).toBeUndefined();
+  it("generates and persists a secret on first call", async () => {
+    const { getOrCreatePersistedSecret } = await import("./secrets");
+    const value = getOrCreatePersistedSecret("SOME_KEY", dataDir);
+    expect(value.length).toBeGreaterThanOrEqual(32);
+  });
+
+  it("returns the same value on a later call (persisted to disk)", async () => {
+    const { getOrCreatePersistedSecret } = await import("./secrets");
+    const first = getOrCreatePersistedSecret("SOME_KEY", dataDir);
+    const second = getOrCreatePersistedSecret("SOME_KEY", dataDir);
+    expect(second).toBe(first);
+  });
+
+  it("prefers an explicit env var over generating one", async () => {
+    process.env.SOME_KEY = "explicit-value-from-env";
+    const { getOrCreatePersistedSecret } = await import("./secrets");
+    expect(getOrCreatePersistedSecret("SOME_KEY", dataDir)).toBe("explicit-value-from-env");
+  });
+
+  it("different names in the same data dir get different secrets", async () => {
+    const { getOrCreatePersistedSecret } = await import("./secrets");
+    const a = getOrCreatePersistedSecret("KEY_A", dataDir);
+    const b = getOrCreatePersistedSecret("KEY_B", dataDir);
+    expect(a).not.toBe(b);
   });
 });

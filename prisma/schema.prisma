@@ -1,33 +1,30 @@
 // AI Minecraft Server Pack Builder — database schema
-// PostgreSQL via Prisma
+// SQLite: zero-config, file-based, no separate DB server or password needed.
+//
+// SQLite has no native enum or array column types, so what used to be
+// Prisma `enum`s and a `SoftwareType[]` list are now plain `String`
+// columns instead — validated at the application boundary (Zod schemas,
+// and the TS union types in src/lib/enums.ts) rather than by the database.
+// See src/lib/enums.ts for the allowed values of each.
 
 generator client {
   provider      = "prisma-client-js"
-  // Explicit instead of relying on auto-detection (which failed silently
-  // in the Alpine build container and generated an incompatible engine —
-  // see Dockerfile). "native" covers local dev on other platforms.
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 // ---------- Users & roles ----------
-
-enum Role {
-  USER
-  ADMIN
-  OWNER
-}
 
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
   username      String   @unique
   passwordHash  String
-  role          Role     @default(USER)
+  role          String   @default("USER") // Role: USER | ADMIN | OWNER
   isBlocked     Boolean  @default(false)
   packLimit     Int      @default(20)
   createdAt     DateTime @default(now())
@@ -51,24 +48,10 @@ model MinecraftVersion {
   packs          ServerPack[]
 }
 
-enum SoftwareType {
-  VANILLA
-  PAPER
-  PURPUR
-  FABRIC
-  FORGE
-  NEOFORGE
-}
-
-enum SoftwareKind {
-  PLUGIN_BASED
-  MOD_BASED
-}
-
 model ServerSoftware {
-  id       String       @id @default(uuid())
-  type     SoftwareType @unique
-  kind     SoftwareKind
+  id       String @id @default(uuid())
+  type     String @unique // SoftwareType
+  kind     String          // SoftwareKind: PLUGIN_BASED | MOD_BASED
   name     String
   downloadBaseUrl String?
 
@@ -116,7 +99,9 @@ model PluginVersion {
   pluginId        String
   version         String
   minecraftRange  String   // e.g. "1.21.x"
-  compatibleSoftware SoftwareType[]
+  // Comma-separated SoftwareType values (SQLite has no array column type)
+  // — see src/lib/enums.ts, split/join helpers in PluginRegistryService.
+  compatibleSoftware String
   downloadUrl     String
   checksum        String?
   createdAt       DateTime @default(now())
@@ -158,7 +143,7 @@ model Mod {
   slug         String   @unique
   name         String
   description  String
-  loader       SoftwareType // FABRIC / FORGE / NEOFORGE
+  loader       String   // SoftwareType: FABRIC | FORGE | NEOFORGE
   officialUrl  String?
   license      String?
   isActive     Boolean  @default(true)
@@ -225,47 +210,33 @@ model AiConversation {
   messages AiMessage[]
 }
 
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
-}
-
 model AiMessage {
-  id             String      @id @default(uuid())
+  id             String   @id @default(uuid())
   conversationId String
-  role           MessageRole
+  role           String   // MessageRole: USER | ASSISTANT | SYSTEM
   content        String
   structuredData Json?
-  createdAt      DateTime    @default(now())
+  createdAt      DateTime @default(now())
 
   conversation AiConversation @relation(fields: [conversationId], references: [id])
 }
 
 // ---------- Server packs ----------
 
-enum PackStatus {
-  DRAFT
-  PLANNED
-  GENERATING
-  READY
-  FAILED
-}
-
 model ServerPack {
-  id                 String     @id @default(uuid())
+  id                 String   @id @default(uuid())
   userId             String
   name               String
-  version            Int        @default(1)
+  version            Int      @default(1)
   minecraftVersionId String
   serverSoftwareId   String
-  status             PackStatus @default(DRAFT)
-  planJson           Json       // the validated, structured server plan
-  filePath           String?    // path in storage adapter, not publicly guessable
+  status             String   @default("DRAFT") // PackStatus
+  planJson           Json     // the validated, structured server plan
+  filePath           String?  // path in storage adapter, not publicly guessable
   fileSizeBytes      Int?
   errorMessage       String?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   user             User             @relation(fields: [userId], references: [id])
   minecraftVersion MinecraftVersion @relation(fields: [minecraftVersionId], references: [id])

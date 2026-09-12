@@ -30,7 +30,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const plugin = await prisma.plugin.findUnique({ where: { id: params.id } });
   if (!plugin) return NextResponse.json({ error: "Plugin not found" }, { status: 404 });
 
-  const version = await prisma.pluginVersion.create({ data: { pluginId: plugin.id, ...parsed.data } });
+  const { compatibleSoftware, ...rest } = parsed.data;
+  const version = await prisma.pluginVersion.create({
+    data: { pluginId: plugin.id, ...rest, compatibleSoftware: compatibleSoftware.join(",") },
+  });
   await audit(session.id, "plugin_version_added", { slug: plugin.slug, version: version.version });
   return NextResponse.json(version, { status: 201 });
 }

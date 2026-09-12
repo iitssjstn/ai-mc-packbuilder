@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { SoftwareType } from "@prisma/client";
+import { SoftwareType } from "@/lib/enums";
 
 export class PluginRegistryService {
   async listActiveSlugs(): Promise<string[]> {
@@ -32,7 +32,7 @@ export class PluginRegistryService {
 
     const candidates = plugin.versions.filter(
       (v) =>
-        v.compatibleSoftware.includes(software) &&
+        v.compatibleSoftware.split(",").includes(software) &&
         (v.minecraftRange === `${rangePrefix}.x` || v.minecraftRange === minecraftVersion)
     );
 

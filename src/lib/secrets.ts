@@ -1,16 +1,14 @@
 import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
 
 /**
  * Resolves a secret from `<NAME>_FILE` (Docker/Compose secrets convention
  * — a file path, typically `/run/secrets/<name>`) if that variable is
  * set, otherwise falls back to the plain `<NAME>` environment variable.
- *
- * This exists so real secrets (AI provider keys, JWT signing secret, DB
- * password) never have to sit in a `.env` file or `docker-compose.yml`
- * environment block in plaintext — mount them as Docker secrets instead
- * and point `<NAME>_FILE` at the mounted path. Env vars are visible via
- * `docker inspect`, `/proc/<pid>/environ`, and often end up in shell
- * history or CI logs; secret files mounted at `/run/secrets/*` are not.
+ * Still useful for genuinely optional things (e.g. a bootstrap AI
+ * provider key) even though the app no longer requires any secrets file
+ * to exist at all.
  */
 export function readSecret(name: string): string | undefined {
   const filePath = process.env[`${name}_FILE`];
@@ -24,22 +22,26 @@ export function readSecret(name: string): string | undefined {
 }
 
 /**
- * Builds DATABASE_URL either directly (DATABASE_URL or DATABASE_URL_FILE)
- * or, for finer-grained secrets, from DB_HOST/DB_PORT/DB_USER/DB_NAME
- * (plain, non-sensitive) plus DB_PASSWORD or DB_PASSWORD_FILE (the
- * actual secret) — so only the password needs to be a mounted secret
- * file, not the whole connection string.
+ * For secrets that have no reason to ever be typed in by a human — the
+ * JWT signing secret and the AI-key encryption key are exactly this kind
+ * — generate one on first boot and persist it to a file inside the app's
+ * data volume, so it survives container restarts/rebuilds without ever
+ * needing to be set anywhere. This is the reason `docker-entrypoint.sh`
+ * and this whole setup can run with zero secrets files or .env entries.
  */
-export function resolveDatabaseUrl(): string | undefined {
-  const direct = readSecret("DATABASE_URL");
-  if (direct) return direct;
+export function getOrCreatePersistedSecret(name: string, dataDir: string): string {
+  const explicit = readSecret(name);
+  if (explicit) return explicit;
 
-  const password = readSecret("DB_PASSWORD");
-  if (!password) return undefined;
+  const filePath = path.join(dataDir, `.${name.toLowerCase()}`);
+  try {
+    return fs.readFileSync(filePath, "utf8").trim();
+  } catch {
+    // Doesn't exist yet — generate, persist, and return a fresh one.
+  }
 
-  const user = process.env.DB_USER ?? "mcpackbuilder";
-  const host = process.env.DB_HOST ?? "localhost";
-  const port = process.env.DB_PORT ?? "5432";
-  const name = process.env.DB_NAME ?? "mcpackbuilder";
-  return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${name}`;
+  const generated = crypto.randomBytes(48).toString("hex");
+  fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(filePath, generated, { mode: 0o600 });
+  return generated;
 }

@@ -1,25 +1,19 @@
 import crypto from "node:crypto";
-import { readSecret } from "./secrets";
+import { getOrCreatePersistedSecret } from "./secrets";
+
+const DATA_DIR = process.env.STORAGE_LOCAL_PATH || "/app/data";
 
 /**
  * AES-256-GCM encryption for secrets stored in the database (currently:
- * AI provider keys, editable via the admin UI). The encryption key itself
- * is the one remaining bootstrap secret that has to live outside the
- * database — via ENCRYPTION_KEY_FILE (Docker secret) or, for local dev,
- * the plain ENCRYPTION_KEY env var.
- *
- * The passphrase is hashed to a 32-byte key with SHA-256 rather than used
- * directly — it only needs to be a high-entropy string (same bar as
- * JWT_SECRET), not a raw hex-encoded key.
+ * AI provider keys, editable via the admin UI). The key is auto-generated
+ * on first use and persisted inside the data volume (see
+ * getOrCreatePersistedSecret) — nothing to set up manually. If the data
+ * volume is ever lost, a new key gets generated and any previously
+ * encrypted AI-provider keys in the database become unreadable; just
+ * re-enter them via Admin -> AI-providers.
  */
 function getKey(): Buffer {
-  const passphrase = readSecret("ENCRYPTION_KEY");
-  if (!passphrase || passphrase.length < 32) {
-    throw new Error(
-      "ENCRYPTION_KEY (or ENCRYPTION_KEY_FILE) must be set and at least 32 characters long — " +
-        "required to store AI provider keys in the database. See secrets/encryption_key.txt.example."
-    );
-  }
+  const passphrase = getOrCreatePersistedSecret("ENCRYPTION_KEY", DATA_DIR);
   return crypto.createHash("sha256").update(passphrase).digest();
 }
 

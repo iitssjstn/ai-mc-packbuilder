@@ -7,13 +7,13 @@ RUN apk add --no-cache openssl
 COPY package.json ./
 RUN npm install
 COPY . .
-# Build-time-only placeholders so `next build` can statically analyze routes
-# (which import env.ts) without a real database/secret. These never reach
-# the runtime image — multi-stage builds don't carry ENV across stages,
-# only the COPY'd filesystem. Real values come from the environment at
-# container start.
-ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
-ENV JWT_SECRET="build-time-placeholder-not-a-real-secret-0000"
+# Build-time-only placeholder so `next build` can statically analyze
+# routes (which import env.ts) without a real database. Never reaches the
+# runtime image — multi-stage builds don't carry ENV across stages, only
+# the COPY'd filesystem. The real SQLite file lives in the mounted data
+# volume at actual runtime. JWT_SECRET/ENCRYPTION_KEY need no placeholder
+# at all — they're auto-generated on first use if not already set.
+ENV DATABASE_URL="file:./build-placeholder.db"
 RUN npx prisma generate
 RUN npm run build
 
