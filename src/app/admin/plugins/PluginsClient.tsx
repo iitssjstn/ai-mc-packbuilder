@@ -204,9 +204,9 @@ export function PluginsClient() {
   return (
     <div className="space-y-2 px-6 py-10">
       <h2 className="text-base font-semibold">Plugin Registry</h2>
-      {plugins.map((p) => (
-        <Panel key={p.id}>
-          <div className="flex items-center justify-between gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {plugins.map((p) => (
+          <Panel key={p.id} className="flex flex-col">
             <div className="min-w-0">
               <p className="text-sm font-medium">
                 {p.name} <span className="font-mono text-xs text-slate-500">({p.slug})</span>
@@ -214,8 +214,8 @@ export function PluginsClient() {
               <p className="mt-0.5 font-mono text-xs text-slate-500">
                 {p.author ? `by ${p.author} · ` : ""}
                 {p.category ?? "uncategorized"}
-                {p.tags ? ` · ${p.tags}` : ""}
               </p>
+              {p.tags && <p className="mt-0.5 font-mono text-xs text-slate-500">{p.tags}</p>}
               <p className="mt-0.5 font-mono text-xs text-slate-500">
                 Last verified: {p.lastVerifiedAt ? new Date(p.lastVerifiedAt).toLocaleDateString() : "never"}
               </p>
@@ -228,7 +228,7 @@ export function PluginsClient() {
                 ))}
               </ul>
             </div>
-            <div className="flex shrink-0 flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-2">
               <Button variant="secondary" onClick={() => markVerified(p.id)}>
                 Mark Verified
               </Button>
@@ -239,9 +239,9 @@ export function PluginsClient() {
                 Delete
               </Button>
             </div>
-          </div>
-        </Panel>
-      ))}
+          </Panel>
+        ))}
+      </div>
 
       <Panel>
         <h4 className="text-sm font-medium">Import from Modrinth</h4>
