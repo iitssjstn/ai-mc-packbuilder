@@ -1,4 +1,4 @@
-import { AiChatMessage, AiCompletionResult, AiProvider, ProviderExhaustedError } from "./types";
+import { AiChatMessage, AiCompletionResult, AiProvider, ProviderExhaustedError, TransientProviderError } from "./types";
 import { AnthropicProvider } from "./providers/AnthropicProvider";
 import { OpenAIProvider } from "./providers/OpenAIProvider";
 import { GoogleProvider } from "./providers/GoogleProvider";
@@ -17,6 +17,7 @@ interface ProviderEntry {
 }
 
 const COOLDOWN_MS = 60_000; // back off a rate-limited key for a minute before retrying it
+const TRANSIENT_RETRY_DELAYS_MS = [400, 1200]; // quick retries for a 5xx/network hiccup, same key
 
 const PROVIDER_IMPLS: Record<ProviderName, AiProvider> = {
   anthropic: new AnthropicProvider(),
@@ -93,7 +94,7 @@ export class AIProviderPool {
         if (!slot) break; // all keys for this provider are cooling down
 
         try {
-          const text = await entry.provider.complete(messages, slot.key);
+          const text = await this.completeWithRetry(entry.provider, messages, slot.key);
           return { text, providerUsed: entry.provider.name };
         } catch (err) {
           if (err instanceof ProviderExhaustedError) {
@@ -110,6 +111,20 @@ export class AIProviderPool {
     throw new Error(
       `All configured AI providers/keys failed or are exhausted. Attempts: ${attempts.join(", ") || "none configured"}`
     );
+  }
+
+  /** A 5xx/overload/network hiccup is usually gone within a second or
+   * two — worth a couple of quick retries on the same key before
+   * treating it as a real failure and moving on to the next key/provider. */
+  private async completeWithRetry(provider: AiProvider, messages: AiChatMessage[], key: string): Promise<string> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await provider.complete(messages, key);
+      } catch (err) {
+        if (!(err instanceof TransientProviderError) || attempt >= TRANSIENT_RETRY_DELAYS_MS.length) throw err;
+        await new Promise((resolve) => setTimeout(resolve, TRANSIENT_RETRY_DELAYS_MS[attempt]));
+      }
+    }
   }
 }
 

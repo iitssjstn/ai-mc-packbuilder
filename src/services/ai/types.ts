@@ -30,3 +30,15 @@ export class ProviderExhaustedError extends Error {
     this.name = "ProviderExhaustedError";
   }
 }
+
+/** Thrown for a transient service-side hiccup that has nothing to do with
+ * this specific key/quota — a 5xx, an overload response, a timed-out or
+ * dropped connection. The pool retries the SAME key a couple of times
+ * with a short backoff before treating it as a real failure, since these
+ * are usually gone within a second or two. */
+export class TransientProviderError extends Error {
+  constructor(public providerName: string, message: string) {
+    super(message);
+    this.name = "TransientProviderError";
+  }
+}

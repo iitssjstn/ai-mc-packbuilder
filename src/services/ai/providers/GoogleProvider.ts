@@ -1,4 +1,4 @@
-import { AiChatMessage, AiProvider, ProviderExhaustedError } from "../types";
+import { AiChatMessage, AiProvider, ProviderExhaustedError, TransientProviderError } from "../types";
 
 export class GoogleProvider implements AiProvider {
   readonly name = "google";
@@ -12,20 +12,28 @@ export class GoogleProvider implements AiProvider {
         parts: [{ text: m.content }],
       }));
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-        }),
-      }
-    );
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            contents,
+            systemInstruction: system ? { parts: [{ text: system }] } : undefined,
+          }),
+        }
+      );
+    } catch (err) {
+      throw new TransientProviderError(this.name, `Google request failed to connect: ${(err as Error).message}`);
+    }
 
     if (res.status === 429) {
       throw new ProviderExhaustedError(this.name, "Google key exhausted (HTTP 429)");
+    }
+    if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
+      throw new TransientProviderError(this.name, `Google temporarily unavailable (HTTP ${res.status})`);
     }
     if (!res.ok) {
       const body = await res.text().catch(() => "");
