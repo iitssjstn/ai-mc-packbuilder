@@ -13,7 +13,7 @@ export class GoogleProvider implements AiProvider {
       }));
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -28,7 +28,8 @@ export class GoogleProvider implements AiProvider {
       throw new ProviderExhaustedError(this.name, "Google key exhausted (HTTP 429)");
     }
     if (!res.ok) {
-      throw new Error(`Google request failed: HTTP ${res.status}`);
+      const body = await res.text().catch(() => "");
+      throw new Error(`Google request failed: HTTP ${res.status} — ${body.slice(0, 300)}`);
     }
 
     const data = await res.json();
