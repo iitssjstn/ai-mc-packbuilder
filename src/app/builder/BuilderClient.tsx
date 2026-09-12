@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Panel, Button, Input } from "@/components/ui";
-import { Plus, Trash2, Pencil, Search, Menu, X } from "lucide-react";
+import { Plus, Trash2, Pencil, Search, Menu, X, FolderOpen, User } from "lucide-react";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -304,6 +305,28 @@ export function BuilderClient() {
             </div>
           ))}
         </div>
+
+        {/* The Builder's sidebar is otherwise entirely about
+            conversations — without this, there is no way to reach
+            these two pages at all while on /builder, since NavBar
+            deliberately doesn't list them here either (to avoid the
+            duplicate navigation this app went out of its way to remove). */}
+        <nav className="flex flex-col gap-1 border-t border-base-700 p-3">
+          <Link
+            href="/packs"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-base-800 hover:text-slate-200"
+          >
+            <FolderOpen size={15} />
+            My Server Packs
+          </Link>
+          <Link
+            href="/account"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-base-800 hover:text-slate-200"
+          >
+            <User size={15} />
+            Account
+          </Link>
+        </nav>
       </aside>
 
       {/* Main chat area */}
