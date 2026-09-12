@@ -6,6 +6,12 @@ import { packGeneratorService, PlanValidationError } from "@/services/PackGenera
 import { rateLimit } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 // Pack generation (plugin downloads + zipping) can take a while — this
 // runs synchronously in the request now that there's no separate worker,
 // so give it real headroom. Also raise the reverse-proxy timeout on

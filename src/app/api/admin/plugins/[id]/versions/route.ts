@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, isSessionUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 const pluginVersionSchema = z.object({
   version: z.string().min(1).max(32),
   minecraftRange: z.string().min(1).max(16),

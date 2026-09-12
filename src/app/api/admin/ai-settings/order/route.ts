@@ -4,6 +4,12 @@ import { requireAuth, requireRole, isSessionUser } from "@/lib/session";
 import { aiSettingsService, PROVIDERS } from "@/services/AiSettingsService";
 import { audit } from "@/lib/audit";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 const orderSchema = z.object({
   order: z.array(z.enum(PROVIDERS)).min(1),
 });

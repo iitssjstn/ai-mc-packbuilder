@@ -4,6 +4,12 @@ import { authenticationService } from "@/services/AuthenticationService";
 import { setSessionCookie } from "@/lib/session";
 import { rateLimit } from "@/lib/rateLimit";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1).max(128),

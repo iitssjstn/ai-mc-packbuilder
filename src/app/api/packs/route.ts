@@ -6,6 +6,12 @@ import { brandingService } from "@/services/BrandingService";
 import { env } from "@/lib/env";
 import { toJsonValue } from "@/lib/json";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 export async function GET() {
   const session = requireAuth();
   if (!isSessionUser(session)) return session;

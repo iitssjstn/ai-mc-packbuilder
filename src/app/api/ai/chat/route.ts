@@ -7,6 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { aiService } from "@/services/AIService";
 import { toJsonValue } from "@/lib/json";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 const chatSchema = z.object({
   conversationId: z.string().uuid().optional(),
   message: z.string().min(1).max(4000),

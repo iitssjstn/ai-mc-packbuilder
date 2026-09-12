@@ -3,6 +3,12 @@ import { requireAuth, isSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { brandingService } from "@/services/BrandingService";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {

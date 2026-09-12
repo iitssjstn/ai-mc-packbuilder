@@ -5,6 +5,12 @@ import { requireAdmin, isSessionUser } from "@/lib/session";
 import { pluginRegistryService } from "@/services/PluginRegistryService";
 import { audit } from "@/lib/audit";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 export async function GET() {
   const session = requireAdmin();
   if (!isSessionUser(session)) return session;

@@ -1,5 +1,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
+# Prisma's musl engine needs OpenSSL to correctly detect which build to
+# generate — without this, `prisma generate` silently guesses wrong
+# (defaults to openssl-1.1.x) and the engine fails to load at runtime.
+RUN apk add --no-cache openssl
 COPY package.json ./
 RUN npm install
 COPY . .
@@ -16,6 +20,9 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+# Same reason as the build stage — the engine binary needs OpenSSL present
+# at runtime too, not just at generate-time.
+RUN apk add --no-cache openssl
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public

@@ -4,6 +4,12 @@ import { requireAuth, requireRole, isSessionUser } from "@/lib/session";
 import { aiSettingsService, PROVIDERS, ProviderName } from "@/services/AiSettingsService";
 import { audit } from "@/lib/audit";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 const keysSchema = z.object({
   // Comma-separated keys, or an empty string to clear the database
   // override and fall back to env/Docker-secrets again.

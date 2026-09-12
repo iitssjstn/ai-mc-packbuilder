@@ -3,6 +3,12 @@ import { Readable } from "node:stream";
 import { requireAuth, isSessionUser } from "@/lib/session";
 import { downloadService } from "@/services/DownloadService";
 
+// All routes here touch the database/cookies at request time and
+// must never be statically prerendered during `next build` (which
+// runs against a placeholder DATABASE_URL with no real database).
+export const dynamic = "force-dynamic";
+
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = requireAuth();
   if (!isSessionUser(session)) return session;

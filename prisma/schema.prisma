@@ -2,7 +2,11 @@
 // PostgreSQL via Prisma
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Explicit instead of relying on auto-detection (which failed silently
+  // in the Alpine build container and generated an incompatible engine —
+  // see Dockerfile). "native" covers local dev on other platforms.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
