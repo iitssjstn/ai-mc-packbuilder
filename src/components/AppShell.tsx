@@ -44,7 +44,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="flex min-h-[calc(100vh-73px)]">
+    // Breaks out of the public site's centered max-width container so
+    // the sidebar sits flush against the actual viewport edge instead
+    // of being inset by whatever margin centers that container on wide
+    // screens — same full-bleed technique used for the homepage background.
+    <div className="relative left-1/2 flex min-h-[calc(100vh-73px)] w-screen -translate-x-1/2">
       <aside className="hidden w-56 shrink-0 border-r border-base-700 bg-base-900 md:block">
         <SidebarContent pathname={pathname} />
       </aside>
@@ -65,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <button
           onClick={() => setDrawerOpen(true)}
           className="flex items-center gap-1.5 border-b border-base-700 px-4 py-3 text-sm text-slate-400 md:hidden"
@@ -73,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Menu size={16} />
           Menu
         </button>
-        {children}
+        <div className="mx-auto max-w-5xl">{children}</div>
       </div>
     </div>
   );

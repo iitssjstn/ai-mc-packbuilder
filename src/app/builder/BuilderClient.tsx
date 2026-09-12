@@ -210,7 +210,10 @@ export function BuilderClient() {
   const filteredConversations = conversations.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex h-[calc(100vh-73px)]">
+    // Full-bleed breakout (see AppShell) — the conversation sidebar must
+    // sit flush against the viewport edge, not centered inside the
+    // public site's max-width container.
+    <div className="relative left-1/2 flex h-[calc(100vh-73px)] w-screen -translate-x-1/2">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />

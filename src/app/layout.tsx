@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { prisma } from "@/lib/prisma";
@@ -25,18 +26,24 @@ async function isMaintenanceMode(): Promise<boolean> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = getSessionUser();
   const maintenance = await isMaintenanceMode();
-  const isAdmin = user && (user.role === "ADMIN" || user.role === "OWNER");
+  const isAdminUser = user && (user.role === "ADMIN" || user.role === "OWNER");
+  const pathname = headers().get("x-pathname") ?? "";
+  // The Admin Panel is its own application area with its own sidebar
+  // (AdminShell) — it must never show the normal public-site header,
+  // and its sidebar needs the full viewport width to sit flush against
+  // the left edge, not centered inside the public site's max-width.
+  const isAdminRoute = pathname.startsWith("/admin");
 
   return (
     <html lang="en">
       <body className="overflow-x-hidden font-sans bg-base-950 text-slate-100 min-h-screen">
-        <NavBar />
+        {!isAdminRoute && <NavBar />}
         {/* No padding here — pages that need it (builder/packs/admin/
             account/login/register) apply their own. The homepage's
             full-bleed background must start immediately after the
             header with zero gap, which any padding here would create. */}
-        <main className="mx-auto max-w-[1700px]">
-          {maintenance && !isAdmin ? (
+        <main className={isAdminRoute ? "" : "mx-auto max-w-[1700px]"}>
+          {maintenance && !isAdminUser ? (
             <div className="mx-auto max-w-md space-y-4 px-6 py-20 text-center">
               <Panel>
                 <h1 className="text-lg font-semibold">Under Maintenance</h1>

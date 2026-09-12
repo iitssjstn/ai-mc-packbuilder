@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Home, Sparkles, FolderOpen, User, Users, Box, ArrowRight, LogOut, Bell } from "lucide-react";
+import { Home, User, Users, Box, ArrowRight, LogOut, Bell } from "lucide-react";
 
 interface Me {
   id: string;
@@ -20,11 +20,11 @@ interface Notification {
   createdAt: string;
 }
 
-const BASE_LINKS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/builder", label: "AI Builder", icon: Sparkles },
-  { href: "/packs", label: "My Server Packs", icon: FolderOpen },
-];
+// "AI Builder" and "My Server Packs" live in each page's own sidebar
+// (BuilderClient / AppShell) now — listing them here too would be the
+// exact duplicate navigation the brief called out. Home stays since
+// it's the one link that isn't already represented in any sidebar.
+const BASE_LINKS = [{ href: "/", label: "Home", icon: Home }];
 
 export function NavBar() {
   const pathname = usePathname();
