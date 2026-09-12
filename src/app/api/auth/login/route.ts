@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authenticationService } from "@/services/AuthenticationService";
 import { setSessionCookie } from "@/lib/session";
 import { rateLimit } from "@/lib/rateLimit";
+import { Role } from "@/lib/enums";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     const user = await authenticationService.verifyCredentials(parsed.data.email, parsed.data.password);
     if (!user) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
 
-    const token = authenticationService.issueToken(user.id, user.role);
+    const token = authenticationService.issueToken(user.id, user.role as Role);
     setSessionCookie(token);
 
     return NextResponse.json({ id: user.id, email: user.email, username: user.username, role: user.role });
