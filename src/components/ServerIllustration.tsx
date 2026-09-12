@@ -12,24 +12,22 @@ const CHECKLIST = ["Klaar om te downloaden", "Geoptimaliseerd", "Compatibiliteit
 
 export function ServerIllustration() {
   return (
-    <div className="relative flex items-center justify-center py-6 lg:py-0">
-      <div className="flex items-center gap-3">
+    <div className="relative flex items-center justify-center py-4 lg:py-0">
+      <div className="flex items-center gap-2">
         {/* Floating feature chips */}
-        <div className="hidden flex-col gap-3 sm:flex">
+        <div className="hidden flex-col gap-2 sm:flex">
           {CHIPS.map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-base-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-lg"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-emerald-500/40 bg-base-900 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 shadow-lg"
             >
-              <Icon size={14} className="text-emerald-400" />
+              <Icon size={12} className="shrink-0 text-emerald-400" />
               {label}
             </div>
           ))}
         </div>
 
-        <div className="relative h-72 w-72 shrink-0 sm:h-96 sm:w-96">
-          {/* Glow burst behind the island for more visual punch — larger
-              than the island itself and centered, so it radiates outward. */}
+        <div className="relative h-[300px] w-[300px] shrink-0 sm:h-[360px] sm:w-[360px]">
           <Image
             src="/images/hero-island-glow.png"
             alt=""
@@ -45,10 +43,10 @@ export function ServerIllustration() {
         </div>
 
         {/* Floating checklist card */}
-        <div className="hidden flex-col gap-1.5 rounded-md border border-base-700 bg-base-900 px-3 py-3 text-xs shadow-lg sm:flex">
+        <div className="hidden flex-col gap-1 rounded-md border border-base-700 bg-base-900 px-2.5 py-2.5 text-[11px] leading-tight shadow-lg sm:flex">
           {CHECKLIST.map((item) => (
-            <div key={item} className="flex items-center gap-1.5 text-slate-300">
-              <CheckCircle2 size={13} className="shrink-0 text-emerald-400" />
+            <div key={item} className="flex items-center gap-1.5 whitespace-nowrap text-slate-300">
+              <CheckCircle2 size={12} className="shrink-0 text-emerald-400" />
               {item}
             </div>
           ))}
@@ -56,8 +54,8 @@ export function ServerIllustration() {
       </div>
 
       {/* Speech-bubble callout */}
-      <div className="absolute -top-2 right-2 flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-base-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-lg sm:right-6">
-        <Sparkles size={13} className="text-emerald-400" />
+      <div className="absolute -top-1 right-0 flex items-center gap-1.5 whitespace-nowrap rounded-md border border-emerald-500/40 bg-base-900 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 shadow-lg">
+        <Sparkles size={12} className="text-emerald-400" />
         /build my server
       </div>
     </div>

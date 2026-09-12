@@ -53,35 +53,37 @@ export default function HomePage() {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-6 py-20 sm:px-12 sm:py-28">
-        <Image
-          src="/images/hero-bg.png"
-          alt=""
-          fill
-          priority
-          className="pointer-events-none object-cover"
-          style={{ maskImage: "radial-gradient(ellipse at center, black 55%, transparent 100%)" }}
-        />
-        <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
+      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-8 py-8 sm:px-12 sm:py-12">
+        <div className="absolute inset-0 overflow-hidden rounded-lg">
+          <Image
+            src="/images/hero-bg.png"
+            alt=""
+            fill
+            priority
+            className="pointer-events-none object-cover"
+            style={{ maskImage: "radial-gradient(ellipse at center, black 55%, transparent 100%)" }}
+          />
+        </div>
+        <div className="relative grid gap-4 lg:grid-cols-[11fr_9fr] lg:items-center">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-mono text-xs tracking-widest text-emerald-400">
               <Zap size={13} />
               AI-POWERED
             </span>
 
-            <h1 className="mt-5 text-5xl font-bold leading-tight sm:text-6xl">
+            <h1 className="mt-3 text-[52px] font-bold leading-[1.05] tracking-tight">
               Vertel wat je wilt.
               <br />
-              <span className="text-emerald-400">Wij bouwen je server.</span>
+              <span className="whitespace-nowrap text-emerald-400">Wij bouwen je server.</span>
             </h1>
 
-            <p className="mt-4 max-w-lg text-slate-400">
+            <p className="mt-3 max-w-xl text-slate-400">
               AI-gestuurde Minecraft Java-serverpakketten — plugins, configuratie
               en branding automatisch samengesteld op basis van een simpel
               gesprek. Geen hosting: downloaden en zelf starten.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 href={primaryHref}
                 className="flex items-center gap-2 rounded-md bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
@@ -99,7 +101,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
               {TRUST_ITEMS.map((item) => (
                 <span key={item} className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-emerald-400" />
