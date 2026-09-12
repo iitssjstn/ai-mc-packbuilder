@@ -83,6 +83,15 @@ export function NavBar() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 
+  // Admin Panel is its own application area with its own sidebar
+  // (AdminShell) and must never show the normal public-site header.
+  // This has to live here (after all hooks, per the rules of hooks) —
+  // deciding it in the server-rendered root layout instead only runs
+  // once per hard navigation, since that layout never re-renders on
+  // client-side route changes and would leave the header stuck in
+  // whatever state the very first page load happened to be in.
+  if (pathname.startsWith("/admin")) return null;
+
   return (
     <header className="border-b border-base-700 bg-base-900">
       <div className="mx-auto flex max-w-[1700px] items-center justify-between gap-4 px-6 py-4">
