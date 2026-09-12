@@ -19,7 +19,7 @@ const CHECKLIST = ["Klaar om te downloaden", "Geoptimaliseerd", "Compatibiliteit
  */
 export function ServerIllustration() {
   return (
-    <div className="relative mx-auto h-[420px] w-full max-w-[460px]">
+    <div className="relative mx-auto h-[365px] w-full max-w-[400px]">
       {/* Glow burst behind the island */}
       <Image
         src="/images/hero-island-glow.png"
