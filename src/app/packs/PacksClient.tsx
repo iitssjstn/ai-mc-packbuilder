@@ -46,7 +46,7 @@ export function PacksClient() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="space-y-4">
       <h2 className="text-base font-semibold">Mijn Serverpacks</h2>
 
       {loading && <p className="text-sm text-slate-500">Laden...</p>}

@@ -6,6 +6,6 @@ import { BuilderClient } from "./BuilderClient";
 // code renders, rather than letting an anonymous visitor see the chat UI
 // and only fail once they try to send a message.
 export default function BuilderPage() {
-  if (!getSessionUser()) redirect("/account");
+  if (!getSessionUser()) redirect("/login?redirect=/builder");
   return <BuilderClient />;
 }

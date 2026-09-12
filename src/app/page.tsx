@@ -47,13 +47,13 @@ const STATS = [
 
 export default function HomePage() {
   const user = getSessionUser();
-  const primaryHref = user ? "/builder" : "/account";
+  const primaryHref = user ? "/builder" : "/login?redirect=/builder";
   const primaryLabel = user ? "Ga naar de AI Builder" : "Aan de slag";
 
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden border border-base-700 bg-base-900 px-6 py-12 sm:px-10">
+      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-6 py-12 sm:px-10">
         <Image
           src="/images/hero-bg.png"
           alt=""
@@ -64,7 +64,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-base-900/40" />
         <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
-            <span className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-mono text-xs tracking-widest text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-mono text-xs tracking-widest text-emerald-400">
               <Zap size={13} />
               AI-POWERED
             </span>
@@ -84,15 +84,15 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href={primaryHref}
-                className="flex items-center gap-2 bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
+                className="flex items-center gap-2 rounded-md bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
               >
                 <Sparkles size={16} />
                 {primaryLabel}
                 <ArrowRight size={16} />
               </Link>
               <Link
-                href={user ? "/packs" : "/account"}
-                className="flex items-center gap-2 border border-base-600 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-base-800"
+                href={user ? "/packs" : "/login?redirect=/packs"}
+                className="flex items-center gap-2 rounded-md border border-base-600 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-base-800"
               >
                 <FolderOpen size={16} />
                 {user ? "Mijn Serverpacks" : "Inloggen"}
@@ -117,7 +117,7 @@ export default function HomePage() {
       <section className="grid gap-4 sm:grid-cols-3">
         {FEATURES.map(({ icon: Icon, title, text }) => (
           <Panel key={title}>
-            <span className="flex h-9 w-9 items-center justify-center border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
               <Icon size={17} />
             </span>
             <h3 className="mt-3 font-mono text-sm text-emerald-400">{title}</h3>
@@ -127,9 +127,9 @@ export default function HomePage() {
       </section>
 
       {/* Bottom CTA banner */}
-      <section className="flex flex-col gap-4 border border-emerald-500/30 bg-emerald-500/5 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+      <section className="flex flex-col gap-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
             <Box size={20} />
           </span>
           <div>
@@ -139,7 +139,7 @@ export default function HomePage() {
         </div>
         <Link
           href={primaryHref}
-          className="flex shrink-0 items-center gap-2 bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
+          className="flex shrink-0 items-center gap-2 rounded-md bg-emerald-500 px-5 py-2.5 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
         >
           Begin nu gratis
           <ArrowRight size={16} />

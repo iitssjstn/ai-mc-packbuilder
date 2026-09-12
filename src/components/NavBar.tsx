@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, Sparkles, FolderOpen, User, Users, Box, ArrowRight } from "lucide-react";
+import { Home, Sparkles, FolderOpen, User, Users, Box, ArrowRight, LogOut } from "lucide-react";
 
 interface Me {
   id: string;
@@ -12,15 +12,15 @@ interface Me {
   role: "USER" | "ADMIN" | "OWNER";
 }
 
-const LINKS = [
+const BASE_LINKS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/builder", label: "AI Builder", icon: Sparkles },
   { href: "/packs", label: "Mijn Serverpacks", icon: FolderOpen },
-  { href: "/account", label: "Account", icon: User },
 ];
 
 export function NavBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
@@ -30,13 +30,26 @@ export function NavBar() {
       .catch(() => setMe(null));
   }, [pathname]);
 
-  const links = [...LINKS, ...(me && (me.role === "ADMIN" || me.role === "OWNER") ? [{ href: "/admin", label: "Admin", icon: Users }] : [])];
+  // "Account" only makes sense once logged in (there's no profile page —
+  // it's really a logout action). Logged out, the equivalent is "Inloggen".
+  const links = [
+    ...BASE_LINKS,
+    ...(me ? [] : [{ href: "/login", label: "Inloggen", icon: User }]),
+    ...(me && (me.role === "ADMIN" || me.role === "OWNER") ? [{ href: "/admin", label: "Admin", icon: Users }] : []),
+  ];
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setMe(null);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="border-b border-base-700 bg-base-900">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <span className="flex h-8 w-8 items-center justify-center border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
             <Box size={18} />
           </span>
           <span>
@@ -59,7 +72,7 @@ export function NavBar() {
                 href={link.href}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
                   active
-                    ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                    ? "rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
                     : "border border-transparent text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -68,11 +81,20 @@ export function NavBar() {
               </Link>
             );
           })}
+          {me && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 border border-transparent px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
+            >
+              <LogOut size={15} />
+              Uitloggen
+            </button>
+          )}
         </nav>
 
         <Link
-          href={me ? "/builder" : "/account"}
-          className="flex shrink-0 items-center gap-1.5 bg-emerald-500 px-4 py-2 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
+          href={me ? "/builder" : "/login"}
+          className="flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-base-950 transition-colors hover:bg-emerald-400"
         >
           Aan de slag
           <ArrowRight size={15} />
