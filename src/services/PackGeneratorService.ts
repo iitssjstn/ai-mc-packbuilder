@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { safeResolve, assertSafeFilename, assertNotSymlink } from "@/lib/pathSafety";
 import { ServerPlan } from "@/schemas/serverPlan.schema";
+import { SoftwareType } from "@/lib/enums";
 import { compatibilityService } from "./CompatibilityService";
 import { dependencyService } from "./DependencyService";
 import { conflictService } from "./ConflictService";
@@ -27,7 +28,7 @@ export interface GeneratedPack {
   fileSizeBytes: number;
 }
 
-const SOFTWARE_TYPE_MAP: Record<ServerPlan["software"]["type"], any> = {
+const SOFTWARE_TYPE_MAP: Record<ServerPlan["software"]["type"], SoftwareType> = {
   vanilla: "VANILLA",
   paper: "PAPER",
   purpur: "PURPUR",
