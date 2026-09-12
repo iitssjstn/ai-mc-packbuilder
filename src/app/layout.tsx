@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { prisma } from "@/lib/prisma";
@@ -27,22 +26,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = getSessionUser();
   const maintenance = await isMaintenanceMode();
   const isAdminUser = user && (user.role === "ADMIN" || user.role === "OWNER");
-  const pathname = headers().get("x-pathname") ?? "";
-  // The Admin Panel is its own application area with its own sidebar
-  // (AdminShell) — it must never show the normal public-site header,
-  // and its sidebar needs the full viewport width to sit flush against
-  // the left edge, not centered inside the public site's max-width.
-  const isAdminRoute = pathname.startsWith("/admin");
 
   return (
     <html lang="en">
       <body className="overflow-x-hidden font-sans bg-base-950 text-slate-100 min-h-screen">
-        {!isAdminRoute && <NavBar />}
+        {/* NavBar decides for itself (via usePathname, client-side) whether
+            to render on /admin routes — deciding that here instead would
+            only run once per hard navigation, since this root layout does
+            not re-render on client-side route changes, leaving the header
+            stuck in whatever state the first page load happened to be in. */}
+        <NavBar />
         {/* No padding here — pages that need it (builder/packs/admin/
             account/login/register) apply their own. The homepage's
             full-bleed background must start immediately after the
-            header with zero gap, which any padding here would create. */}
-        <main className={isAdminRoute ? "" : "mx-auto max-w-[1700px]"}>
+            header with zero gap, which any padding here would create.
+            Always the same max-width regardless of route — AdminShell/
+            AppShell/BuilderClient already break out of this via their
+            own full-bleed transform when their sidebar needs to be
+            flush against the viewport edge, so this wrapper's width
+            has no bearing on that. */}
+        <main className="mx-auto max-w-[1700px]">
           {maintenance && !isAdminUser ? (
             <div className="mx-auto max-w-md space-y-4 px-6 py-20 text-center">
               <Panel>
