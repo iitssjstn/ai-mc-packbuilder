@@ -14,7 +14,10 @@ export const dynamic = "force-dynamic";
 
 
 const chatSchema = z.object({
-  conversationId: z.string().uuid().optional(),
+  // .nullish() (not just .optional()) because the frontend's React state
+  // starts as `null` before a conversation exists, and JSON.stringify
+  // keeps that null in the request body rather than omitting the key.
+  conversationId: z.string().uuid().nullish(),
   message: z.string().min(1).max(4000),
 });
 
