@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="nl">
       <body className="font-sans bg-base-950 text-slate-100 min-h-screen">
         <NavBar />
-        <main className="mx-auto max-w-[1400px] px-6 py-10">{children}</main>
+        <main className="mx-auto max-w-[1400px] px-6 pt-4 pb-10">{children}</main>
       </body>
     </html>
   );

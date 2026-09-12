@@ -53,8 +53,11 @@ export default function HomePage() {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-8 py-8 sm:px-12 sm:py-12">
-        <div className="absolute inset-0 overflow-hidden rounded-lg">
+      <section className="relative overflow-hidden rounded-lg border border-base-700 bg-base-900 px-8 py-10 sm:pl-16 sm:pr-10 sm:py-14">
+        {/* .hero-background — position: absolute, inset: 0, z-index: 0.
+            Purely a visual layer: takes zero layout space, never part of
+            the grid below, never affects sizing/position of anything. */}
+        <div className="absolute inset-0 z-0 overflow-hidden rounded-lg">
           <Image
             src="/images/hero-bg.png"
             alt=""
@@ -64,7 +67,9 @@ export default function HomePage() {
             style={{ maskImage: "radial-gradient(ellipse at center, black 55%, transparent 100%)" }}
           />
         </div>
-        <div className="relative grid gap-4 lg:grid-cols-[11fr_9fr] lg:items-center">
+        {/* .hero-content — position: relative, z-index: 1. The only two
+            elements that actually occupy layout space in the hero. */}
+        <div className="relative z-10 grid gap-4 lg:grid-cols-[11fr_9fr] lg:items-center">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-mono text-xs tracking-widest text-emerald-400">
               <Zap size={13} />
