@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     ? await prisma.aiConversation.findFirst({ where: { id: parsed.data.conversationId, userId } })
     : null;
 
+  const isFirstMessage = !conversation;
   if (!conversation) {
     conversation = await prisma.aiConversation.create({ data: { userId } });
   }
@@ -45,6 +46,17 @@ export async function POST(req: NextRequest) {
   await prisma.aiMessage.create({
     data: { conversationId: conversation.id, role: "USER", content: parsed.data.message },
   });
+
+  // Auto-title from the first message rather than a separate AI call —
+  // cheap, instant, and good enough to distinguish conversations in the
+  // sidebar list. The user can always rename it manually afterwards.
+  if (isFirstMessage) {
+    const title = parsed.data.message.slice(0, 60).trim();
+    await prisma.aiConversation.update({
+      where: { id: conversation.id },
+      data: { title: title.length < parsed.data.message.length ? `${title}...` : title },
+    });
+  }
 
   const priorMessages = await prisma.aiMessage.findMany({
     where: { conversationId: conversation.id },
