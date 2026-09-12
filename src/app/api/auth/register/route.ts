@@ -4,6 +4,7 @@ import { authenticationService } from "@/services/AuthenticationService";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { rateLimit } from "@/lib/rateLimit";
+import { Role } from "@/lib/enums";
 
 // All routes here touch the database/cookies at request time and
 // must never be statically prerendered during `next build` (which
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (existing) return NextResponse.json({ error: "Email or username already in use" }, { status: 409 });
 
   const user = await authenticationService.register(email, username, password);
-  const token = authenticationService.issueToken(user.id, user.role);
+  const token = authenticationService.issueToken(user.id, user.role as Role);
   setSessionCookie(token);
 
   return NextResponse.json(
