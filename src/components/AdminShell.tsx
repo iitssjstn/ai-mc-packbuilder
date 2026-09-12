@@ -34,7 +34,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     // Full-bleed breakout — admin routes have no NavBar/max-width
     // wrapper above them at all (see layout.tsx), but this stays
     // consistent with the same technique regardless.
-    <div className="relative left-1/2 flex min-h-[calc(100vh-73px)] w-screen -translate-x-1/2">
+    // min-h-screen, not calc(100vh-73px) — the admin sidebar has no
+    // NavBar above it at all (NavBar hides itself on /admin routes),
+    // so there's no header height to subtract here.
+    <div className="relative left-1/2 flex min-h-screen w-screen -translate-x-1/2">
       <aside className="hidden w-56 shrink-0 flex-col border-r border-amber-500/20 bg-base-900 md:flex">
         <div className="border-b border-amber-500/20 px-4 py-3">
           <p className="font-mono text-xs uppercase tracking-wider text-amber-400">Admin Panel</p>
