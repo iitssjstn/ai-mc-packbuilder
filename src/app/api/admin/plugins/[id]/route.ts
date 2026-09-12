@@ -46,7 +46,23 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const session = requireAdmin();
   if (!isSessionUser(session)) return session;
 
-  const plugin = await prisma.plugin.delete({ where: { id: params.id } });
+  const plugin = await prisma.plugin.findUnique({ where: { id: params.id } });
+  if (!plugin) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Versions/dependencies/conflicts cascade-delete fine (pure registry
+  // metadata), but a plugin already baked into an existing generated
+  // pack's plan is different — silently deleting it would corrupt that
+  // pack's record of what it actually contains. Deactivating is the
+  // right tool for "stop using this going forward" instead.
+  const usageCount = await prisma.packPlugin.count({ where: { pluginId: plugin.id } });
+  if (usageCount > 0) {
+    return NextResponse.json(
+      { error: `Cannot delete — this plugin is used by ${usageCount} existing server pack(s). Deactivate it instead.` },
+      { status: 409 }
+    );
+  }
+
+  await prisma.plugin.delete({ where: { id: plugin.id } });
   await audit(session.id, "plugin_removed", { slug: plugin.slug });
   return new NextResponse(null, { status: 204 });
 }
