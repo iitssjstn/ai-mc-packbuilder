@@ -204,40 +204,45 @@ export function PluginsClient() {
   return (
     <div className="space-y-2 px-6 py-10">
       <h2 className="text-base font-semibold">Plugin Registry</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {plugins.map((p) => (
-          <Panel key={p.id} className="flex flex-col">
+          <Panel key={p.id} className="flex flex-col p-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium">
-                {p.name} <span className="font-mono text-xs text-slate-500">({p.slug})</span>
+              <p className="truncate text-xs font-medium">
+                {p.name} <span className="font-mono text-[10px] text-slate-500">({p.slug})</span>
               </p>
-              <p className="mt-0.5 font-mono text-xs text-slate-500">
+              <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500">
                 {p.author ? `by ${p.author} · ` : ""}
                 {p.category ?? "uncategorized"}
               </p>
-              {p.tags && <p className="mt-0.5 font-mono text-xs text-slate-500">{p.tags}</p>}
-              <p className="mt-0.5 font-mono text-xs text-slate-500">
-                Last verified: {p.lastVerifiedAt ? new Date(p.lastVerifiedAt).toLocaleDateString() : "never"}
+              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                Verified: {p.lastVerifiedAt ? new Date(p.lastVerifiedAt).toLocaleDateString() : "never"}
               </p>
-              <ul className="mt-1 font-mono text-xs text-slate-500">
-                {p.versions.length === 0 && <li>no versions</li>}
-                {p.versions.map((v) => (
-                  <li key={v.id}>
-                    {v.version} ({v.minecraftRange}) {v.downloadUrl ? "✓" : "⚠ no download URL"}
-                  </li>
-                ))}
-              </ul>
+              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                {p.versions.length === 0
+                  ? "no versions"
+                  : `${p.versions.length} version(s) — latest ${p.versions[p.versions.length - 1].downloadUrl ? "✓" : "⚠"}`}
+              </p>
             </div>
-            <div className="mt-4 flex flex-col gap-2">
-              <Button variant="secondary" onClick={() => markVerified(p.id)}>
-                Mark Verified
-              </Button>
-              <Button variant="secondary" onClick={() => togglePlugin(p.id, !p.isActive)}>
+            <div className="mt-2 flex gap-1">
+              <button
+                onClick={() => markVerified(p.id)}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
+              >
+                Verify
+              </button>
+              <button
+                onClick={() => togglePlugin(p.id, !p.isActive)}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
+              >
                 {p.isActive ? "Deactivate" : "Activate"}
-              </Button>
-              <Button variant="secondary" onClick={() => removePlugin(p.id, p.name)}>
+              </button>
+              <button
+                onClick={() => removePlugin(p.id, p.name)}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-red-500/10 hover:text-red-400"
+              >
                 Delete
-              </Button>
+              </button>
             </div>
           </Panel>
         ))}
