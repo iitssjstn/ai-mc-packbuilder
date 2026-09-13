@@ -17,7 +17,18 @@ import { logger } from "../lib/logger";
  * admin has since edited (upsert uses `update: {}`).
  */
 
-const MC_VERSIONS = ["1.20.4", "1.20.6", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8"];
+// Verified against mcreference.com's version-history table (cross-checked
+// against Mojang's own release pattern) — every one of these is a real,
+// released Java Edition version. Covers 1.20.x through the current
+// calendar-versioned releases (Minecraft switched from 1.x numbering to
+// calendar versions in 2026), since anything a user would realistically
+// request today falls in this range; Paper/Purpur historically don't
+// support anything much older than 1.20 anyway.
+const MC_VERSIONS = [
+  "1.20", "1.20.1", "1.20.2", "1.20.3", "1.20.4", "1.20.5", "1.20.6",
+  "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11",
+  "26.1", "26.1.1", "26.1.2", "26.2",
+];
 
 const PLUGINS: Array<{
   slug: string;
