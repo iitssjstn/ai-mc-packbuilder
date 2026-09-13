@@ -47,11 +47,22 @@ export class PluginRegistryService {
     const [major, minor] = minecraftVersion.split(".");
     const rangePrefix = `${major}.${minor}`;
 
-    const candidates = plugin.versions.filter(
-      (v) =>
-        v.compatibleSoftware.split(",").includes(software) &&
-        (v.minecraftRange === `${rangePrefix}.x` || v.minecraftRange === minecraftVersion)
-    );
+    // Accept a stored range in either "1.21" or "1.21.x" form as meaning
+    // the same thing (any patch version of 1.21) — a version row created
+    // by hand (or from an older seed run that predates the ".x"
+    // convention) shouldn't silently stop matching just because it's
+    // missing a trailing ".x" that was never actually a hard requirement.
+    // Software names are also compared case-insensitively and trimmed,
+    // since a hand-edited comma list is an easy place for stray
+    // whitespace/casing to creep in.
+    const candidates = plugin.versions.filter((v) => {
+      const softwareList = v.compatibleSoftware.split(",").map((s) => s.trim().toUpperCase());
+      if (!softwareList.includes(software)) return false;
+
+      const range = v.minecraftRange.trim();
+      const normalizedRange = range.endsWith(".x") ? range.slice(0, -2) : range;
+      return normalizedRange === rangePrefix || range === minecraftVersion;
+    });
 
     // Prefer the most recently added compatible version — not blindly
     // "latest overall", per spec §15.

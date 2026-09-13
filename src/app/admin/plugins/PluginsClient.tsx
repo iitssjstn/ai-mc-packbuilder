@@ -8,6 +8,7 @@ interface PluginVersion {
   id: string;
   version: string;
   minecraftRange: string;
+  compatibleSoftware: string;
   downloadUrl: string;
 }
 interface Plugin {
@@ -20,6 +21,8 @@ interface Plugin {
   lastVerifiedAt: string | null;
   isActive: boolean;
   versions: PluginVersion[];
+  configSchema: string | null;
+  configSchemaVerified: boolean;
 }
 
 const SOFTWARE_OPTIONS = ["PAPER", "PURPUR", "VANILLA"] as const;
@@ -69,6 +72,71 @@ export function PluginsClient() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       alert(data.error ?? "Could not delete plugin");
+    }
+    load();
+  }
+
+  const [discoverBusy, setDiscoverBusy] = useState<string | null>(null);
+
+  async function discoverConfig(id: string) {
+    setDiscoverBusy(id);
+    const res = await fetch(`/api/admin/plugins/${id}/discover-config`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      alert(
+        data.sourceAvailable
+          ? `Found ${data.found} config key(s) from real documentation. Review and verify before it's used in generation.`
+          : "No documentation found on Modrinth to extract config keys from."
+      );
+      load();
+    } else {
+      alert(data.error ?? "Discovery failed");
+    }
+    setDiscoverBusy(null);
+  }
+
+  async function verifyConfig(id: string) {
+    const res = await fetch(`/api/admin/plugins/${id}/verify-config`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Could not verify config schema");
+    }
+    load();
+  }
+
+  async function editVersion(pluginId: string, version: PluginVersion) {
+    // A seed re-run never overwrites an existing version row (by design,
+    // so an admin's own edits are never clobbered) — which also means a
+    // wrong/stale minecraftRange from an old seed run can only ever be
+    // fixed here, not by redeploying.
+    const newRange = window.prompt(
+      `Minecraft range for ${version.version} (e.g. "1.21" or "1.21.x" — both mean any 1.21.z):`,
+      version.minecraftRange
+    );
+    if (newRange === null) return;
+    const newSoftware = window.prompt(
+      "Compatible software, comma-separated (PAPER, PURPUR):",
+      version.compatibleSoftware
+    );
+    if (newSoftware === null) return;
+
+    const software = newSoftware
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter((s) => s === "PAPER" || s === "PURPUR");
+    if (software.length === 0) {
+      alert("At least one of PAPER or PURPUR is required.");
+      return;
+    }
+
+    const res = await fetch(`/api/admin/plugins/${pluginId}/versions/${version.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ minecraftRange: newRange.trim(), compatibleSoftware: software }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Could not update version");
     }
     load();
   }
@@ -204,50 +272,6 @@ export function PluginsClient() {
   return (
     <div className="space-y-2 px-6 py-10">
       <h2 className="text-base font-semibold">Plugin Registry</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {plugins.map((p) => (
-          <Panel key={p.id} className="flex flex-col p-3">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium">
-                {p.name} <span className="font-mono text-[10px] text-slate-500">({p.slug})</span>
-              </p>
-              <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500">
-                {p.author ? `by ${p.author} · ` : ""}
-                {p.category ?? "uncategorized"}
-              </p>
-              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
-                Verified: {p.lastVerifiedAt ? new Date(p.lastVerifiedAt).toLocaleDateString() : "never"}
-              </p>
-              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
-                {p.versions.length === 0
-                  ? "no versions"
-                  : `${p.versions.length} version(s) — latest ${p.versions[p.versions.length - 1].downloadUrl ? "✓" : "⚠"}`}
-              </p>
-            </div>
-            <div className="mt-2 flex gap-1">
-              <button
-                onClick={() => markVerified(p.id)}
-                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
-              >
-                Verify
-              </button>
-              <button
-                onClick={() => togglePlugin(p.id, !p.isActive)}
-                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
-              >
-                {p.isActive ? "Deactivate" : "Activate"}
-              </button>
-              <button
-                onClick={() => removePlugin(p.id, p.name)}
-                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-red-500/10 hover:text-red-400"
-              >
-                Delete
-              </button>
-            </div>
-          </Panel>
-        ))}
-      </div>
-
       <Panel>
         <h4 className="text-sm font-medium">Import from Modrinth</h4>
         <p className="mt-1 text-xs text-slate-500">
@@ -327,6 +351,87 @@ export function PluginsClient() {
           </ul>
         )}
       </Panel>
+
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {plugins.map((p) => (
+          <Panel key={p.id} className="flex flex-col p-3">
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium">
+                {p.name} <span className="font-mono text-[10px] text-slate-500">({p.slug})</span>
+              </p>
+              <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500">
+                {p.author ? `by ${p.author} · ` : ""}
+                {p.category ?? "uncategorized"}
+              </p>
+              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                Verified: {p.lastVerifiedAt ? new Date(p.lastVerifiedAt).toLocaleDateString() : "never"}
+              </p>
+              <div className="mt-0.5 space-y-0.5 font-mono text-[10px] text-slate-500">
+                {p.versions.length === 0 && <p>no versions</p>}
+                {p.versions.map((v) => (
+                  <div key={v.id} className="flex items-center justify-between gap-1">
+                    <span className="truncate">
+                      {v.version} — {v.minecraftRange} — {v.compatibleSoftware}
+                      {!v.downloadUrl && " ⚠ no URL"}
+                    </span>
+                    <button
+                      onClick={() => editVersion(p.id, v)}
+                      className="shrink-0 text-slate-400 underline hover:text-slate-200"
+                    >
+                      edit
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                {(() => {
+                  const count = p.configSchema ? Object.keys(JSON.parse(p.configSchema).properties ?? {}).length : 0;
+                  if (count === 0) return "config keys: none discovered";
+                  return `config keys: ${count} ${p.configSchemaVerified ? "(verified ✓)" : "(unverified ⚠)"}`;
+                })()}
+              </p>
+            </div>
+            <div className="mt-2 flex gap-1">
+              <button
+                onClick={() => markVerified(p.id)}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
+              >
+                Verify
+              </button>
+              <button
+                onClick={() => togglePlugin(p.id, !p.isActive)}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
+              >
+                {p.isActive ? "Deactivate" : "Activate"}
+              </button>
+              <button
+                onClick={() => removePlugin(p.id, p.name)}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-red-500/10 hover:text-red-400"
+              >
+                Delete
+              </button>
+            </div>
+            <div className="mt-1 flex gap-1">
+              <button
+                onClick={() => discoverConfig(p.id)}
+                disabled={discoverBusy === p.id}
+                className="flex-1 rounded-md border border-base-600 px-1.5 py-1 text-[10px] text-slate-300 transition-colors hover:bg-base-800"
+              >
+                {discoverBusy === p.id ? "Discovering..." : "Discover Config"}
+              </button>
+              {p.configSchema && !p.configSchemaVerified && (
+                <button
+                  onClick={() => verifyConfig(p.id)}
+                  className="flex-1 rounded-md border border-emerald-500/40 px-1.5 py-1 text-[10px] text-emerald-400 transition-colors hover:bg-emerald-500/10"
+                >
+                  Verify Config
+                </button>
+              )}
+            </div>
+          </Panel>
+        ))}
+      </div>
 
       <Panel>
         <h4 className="text-sm font-medium">Add Plugin</h4>
