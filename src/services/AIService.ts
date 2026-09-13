@@ -1,6 +1,6 @@
 import { aiProviderPool } from "./ai/AIProviderPool";
 import { AiChatMessage } from "./ai/types";
-import { parseServerPlan, ServerPlan } from "@/schemas/serverPlan.schema";
+import { parseServerPlan, serverPlanSchema, ServerPlan } from "@/schemas/serverPlan.schema";
 import { pluginRegistryService } from "./PluginRegistryService";
 import { modRegistryService } from "./ModRegistryService";
 
@@ -44,6 +44,36 @@ Available mod slugs: {{MOD_SLUGS}}
 
 Known configurable settings (verified — safe to use in configOverrides):
 {{CONFIG_KEYS}}
+
+The server plan JSON MUST use exactly this shape and these field names —
+nesting, casing, and every field matters. Example (adapt the actual values,
+never the structure):
+{
+  "minecraft": { "version": "1.21.1", "edition": "java" },
+  "software": { "type": "purpur" },
+  "server": {
+    "name": "My Awesome SMP",
+    "maxPlayers": 30,
+    "gamemode": "survival",
+    "difficulty": "normal",
+    "pvp": true,
+    "spawnProtection": 16,
+    "viewDistance": 10,
+    "simulationDistance": 10
+  },
+  "serverType": "smp",
+  "requestedPluginSlugs": ["essentialsx", "vault", "luckperms", "griefprevention"],
+  "requestedModSlugs": [],
+  "configOverrides": {},
+  "branding": {}
+}
+- "software.type" is one of: vanilla, paper, purpur, fabric, forge, neoforge
+- "server.gamemode" is one of: survival, creative, adventure
+- "server.difficulty" is one of: peaceful, easy, normal, hard
+- "serverType" is one of: survival, smp, pvp, minigames, skyblock, creative, prison, factions, custom
+- Plugins/mods go in requestedPluginSlugs / requestedModSlugs — never under "server", never a plain "plugins" key
+- Do not invent top-level fields (e.g. no "playerCount", no "ram") — player
+  count is server.maxPlayers; there is no RAM field in this schema at all
 `;
 
 export class AIService {
@@ -75,13 +105,60 @@ export class AIService {
 
     const { text } = await aiProviderPool.complete(messages);
 
-    // Try to interpret the reply as a finished plan; if that fails, it's
-    // just conversational text to show the user as-is.
+    const plan = this.tryParsePlan(text);
+    if (plan) return { reply: "Ik heb een serverplan opgesteld op basis van je wensen.", plan };
+
+    // The model may have intended this as a plan but gotten the shape
+    // wrong (wrong field names/nesting, missing required fields) — that
+    // used to just show the broken JSON to the user as if it were a
+    // normal reply, with the AI never told anything was wrong. One
+    // corrective retry, telling it exactly what zod rejected, before
+    // falling back to showing the text as-is.
+    if (this.looksLikeAttemptedPlan(text)) {
+      const validationError = this.describeValidationError(text);
+      const retryMessages: AiChatMessage[] = [
+        ...messages,
+        { role: "assistant", content: text },
+        {
+          role: "user",
+          content: `That JSON doesn't match the required server plan schema: ${validationError}. Re-read the exact shape and field names in your instructions and respond with ONLY the corrected JSON object.`,
+        },
+      ];
+      const retry = await aiProviderPool.complete(retryMessages);
+      const retriedPlan = this.tryParsePlan(retry.text);
+      if (retriedPlan) return { reply: "Ik heb een serverplan opgesteld op basis van je wensen.", plan: retriedPlan };
+    }
+
+    return { reply: text, plan: null };
+  }
+
+  private tryParsePlan(text: string): ServerPlan | null {
     try {
-      const plan = parseServerPlan(text);
-      return { reply: "Ik heb een serverplan opgesteld op basis van je wensen.", plan };
+      return parseServerPlan(text);
     } catch {
-      return { reply: text, plan: null };
+      return null;
+    }
+  }
+
+  /** A cheap heuristic — full JSON parsing/validation happens in
+   * parseServerPlan; this just decides whether a retry is worth
+   * attempting at all, versus text that was never meant to be a plan. */
+  private looksLikeAttemptedPlan(text: string): boolean {
+    const trimmed = text.trim();
+    return trimmed.startsWith("{") && trimmed.includes("minecraft");
+  }
+
+  private describeValidationError(text: string): string {
+    try {
+      const cleaned = text.trim().replace(/^```json\s*|\s*```$/g, "");
+      const json = JSON.parse(cleaned);
+      const result = serverPlanSchema.safeParse(json);
+      if (!result.success) {
+        return result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      }
+      return "unknown validation error";
+    } catch {
+      return "the response was not valid JSON at all";
     }
   }
 }
