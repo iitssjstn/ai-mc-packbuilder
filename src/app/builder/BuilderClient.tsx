@@ -50,6 +50,8 @@ export function BuilderClient() {
   const [plan, setPlan] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [readyPackId, setReadyPackId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +91,8 @@ export function BuilderClient() {
       setConversationId(data.id);
       setMessages(data.messages);
       setPlan(data.plan);
+      setDownloadUrl(null);
+      setReadyPackId(null);
     }
     setBusy(false);
   }
@@ -98,6 +102,8 @@ export function BuilderClient() {
     setMessages([]);
     setPlan(null);
     setStatus(null);
+    setDownloadUrl(null);
+    setReadyPackId(null);
   }
 
   async function renameConversation(id: string, currentTitle: string) {
@@ -139,7 +145,11 @@ export function BuilderClient() {
       }
       setConversationId(data.conversationId);
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
-      if (data.plan) setPlan(data.plan);
+      if (data.plan) {
+        setPlan(data.plan);
+        setDownloadUrl(null);
+        setReadyPackId(null);
+      }
       loadConversations();
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "Could not connect to the server." }]);
@@ -152,6 +162,8 @@ export function BuilderClient() {
     if (!plan || busy) return;
     setBusy(true);
     setStatus(null);
+    setDownloadUrl(null);
+    setReadyPackId(null);
 
     try {
       const createRes = await fetch("/api/packs", {
@@ -189,7 +201,9 @@ export function BuilderClient() {
         setStatus(`Could not generate pack: ${genData.error}`);
         return;
       }
-      setStatus("Done! Check your pack under 'My Server Packs'.");
+      setStatus("Done!");
+      setDownloadUrl(`/api/packs/${createData.id}/download`);
+      setReadyPackId(createData.id);
     } catch {
       setStatus("Unexpected error during generation.");
     } finally {
@@ -412,7 +426,7 @@ export function BuilderClient() {
               <Button variant="secondary" onClick={saveDraft} disabled={busy}>
                 Save as Draft
               </Button>
-              {status && !currentStep && <span className="text-sm text-slate-400">{status}</span>}
+              {status && !currentStep && !downloadUrl && <span className="text-sm text-slate-400">{status}</span>}
             </div>
 
             {currentStep && (
@@ -433,6 +447,19 @@ export function BuilderClient() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {downloadUrl && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-base-700 pt-4">
+                <a href={downloadUrl}>
+                  <Button>Download Server Pack</Button>
+                </a>
+                {readyPackId && (
+                  <a href={`/packs/${readyPackId}`} className="text-sm text-emerald-400 hover:underline">
+                    View pack details
+                  </a>
+                )}
               </div>
             )}
           </Panel>
