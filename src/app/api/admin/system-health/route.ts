@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole, isSessionUser } from "@/lib/session";
 import { aiSettingsService } from "@/services/AiSettingsService";
+import { aiProviderPool } from "@/services/ai/AIProviderPool";
 import { env } from "@/lib/env";
 import type { HealthStatus } from "@/lib/enums";
 
@@ -33,17 +34,26 @@ export async function GET() {
     checks.push({ name: "Database", status: "error", detail: (err as Error).message });
   }
 
-  // AI providers — at least one configured key across all providers
+  // AI providers — a real completion call, not just "is a key present".
+  // A key can be configured and still be invalid/expired/out of credit
+  // (401/403/insufficient-funds), which the old "count > 0" check would
+  // never catch — this is what actually answers "does the chat feature
+  // currently work", surfacing the real provider error if not.
   try {
     const settings = await aiSettingsService.getMaskedSettings();
     const totalKeys = Object.values(settings.providers).reduce((sum, p) => sum + p.count, 0);
-    checks.push({
-      name: "AI providers",
-      status: totalKeys > 0 ? "healthy" : "warning",
-      detail: totalKeys > 0 ? `${totalKeys} key(s) configured` : "No AI provider keys configured",
-    });
+    if (totalKeys === 0) {
+      checks.push({ name: "AI providers", status: "warning", detail: "No AI provider keys configured" });
+    } else {
+      const result = await aiProviderPool.complete([{ role: "user", content: "Reply with just: ok" }]);
+      checks.push({
+        name: "AI providers",
+        status: "healthy",
+        detail: `${totalKeys} key(s) configured — live test via ${result.providerUsed} succeeded`,
+      });
+    }
   } catch (err) {
-    checks.push({ name: "AI providers", status: "error", detail: (err as Error).message });
+    checks.push({ name: "AI providers", status: "error", detail: `Live test call failed: ${(err as Error).message}` });
   }
 
   // Plugin registry
